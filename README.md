@@ -1,4 +1,4 @@
-# 🚀 WA Contact Extractor Pro (Manifest V3)
+# 🚀 Wasup Contact Extractor CLC (Manifest V3)
 
 🌐 [Leer en Español](#-español)
 
