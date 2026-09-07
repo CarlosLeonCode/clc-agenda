@@ -5,7 +5,7 @@
 ## Cómo contribuir (How to contribute)
 
 1. **Fork** el repositorio.
-2. Cloná tu fork localmente: `git clone https://github.com/TU_USUARIO/clc_wa_contact_extractor.git`
+2. Cloná tu fork localmente: `git clone https://github.com/TU_USUARIO/wasup_contact_extractor_clc.git`
 3. Creá una rama (branch) para tu feature o fix: `git checkout -b mi-nueva-feature`
 4. Realizá los cambios en el código.
 5. Ejecutá los tests para asegurarte de que todo funciona: `npm test`
