@@ -1,0 +1,20 @@
+{
+  "name": "wa-contact-extractor-pro",
+  "version": "1.0.0",
+  "description": "WhatsApp Web Contact Extractor browser extension (Manifest V3)",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "icons": "node generate-icons.js"
+  },
+  "keywords": [
+    "whatsapp",
+    "extractor",
+    "chrome-extension",
+    "vcard",
+    "csv",
+    "contacts"
+  ],
+  "author": "",
+  "license": "MIT"
+}

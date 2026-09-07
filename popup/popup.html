@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WA Contact Extractor Pro</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="header">
+      <div class="logo-area">
+        <img src="../icons/icon-48.png" alt="Logo" class="logo">
+        <div>
+          <h2>WA Extractor Pro</h2>
+          <span class="version">v1.3.0 • Manifest V3</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="body-content">
+      <div id="status-card" class="status-card">
+        <div class="status-indicator" id="status-dot"></div>
+        <div class="status-text" id="status-text">Detectando WhatsApp Web...</div>
+      </div>
+
+      <div class="features-list">
+        <div class="feature-item">👥 <strong>Grupos:</strong> Extrae integrantes y administradores.</div>
+        <div class="feature-item">🏷️ <strong>Etiquetas:</strong> Extrae contactos por etiquetas de negocio.</div>
+        <div class="feature-item">📱 <strong>Todos:</strong> Separa guardados de no guardados.</div>
+        <div class="feature-item">📥 <strong>Formatos:</strong> CSV (Excel UTF-8), vCard (.vcf) y JSON.</div>
+      </div>
+
+      <button id="btn-action" class="btn-primary">
+        Cargando...
+      </button>
+    </div>
+
+    <div class="footer">
+      <span>100% Seguro & Privado • Open Source</span>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
