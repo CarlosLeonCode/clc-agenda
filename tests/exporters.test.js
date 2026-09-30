@@ -4,6 +4,8 @@ import { cleanPhoneNumber, detectCountry, isLid, parseContactDetails } from '../
 import { exportToCSV } from '../src/exporters/csv.js';
 import { exportToVCard } from '../src/exporters/vcard.js';
 import { exportToJSON } from '../src/exporters/json.js';
+import { normalizeContact } from '../src/exporters/normalize.js';
+import { exportToGoogleContactsCSV } from '../src/exporters/google-contacts.js';
 
 test('Phone utility: detects and ignores internal LIDs', () => {
   assert.equal(isLid('12345678901234@lid'), true);
@@ -96,4 +98,26 @@ test('vCard Exporter: outputs valid vCard 3.0 lines with Name and Phone', () => 
   assert.ok(vcf.includes('FN:María García'));
   assert.ok(vcf.includes('TEL;TYPE=CELL,VOICE:+34600112233'));
   assert.ok(vcf.includes('END:VCARD'));
+});
+
+test('Contact mapper: normalizes names and phone numbers for external exports', () => {
+  const normalized = normalizeContact({ savedName: '  Ana, María  ', pushName: 'Ana', cleanPhone: '573001234567', sourceName: 'Ventas' });
+  assert.deepEqual(normalized, {
+    displayName: 'Ana, María',
+    phone: '+573001234567',
+    cleanPhone: '573001234567',
+    organization: '',
+    note: 'Extraído de: Ventas',
+    labels: ['Ventas']
+  });
+});
+
+test('Google Contacts CSV: emits import-compatible headers and escaped values', () => {
+  const csv = exportToGoogleContactsCSV([{ name: 'Ana, María', cleanPhone: '573001234567', isBusiness: true, sourceName: 'Ventas' }]);
+  assert.ok(csv.startsWith('\uFEFF'));
+  assert.ok(csv.includes('First Name,Middle Name,Last Name'));
+  assert.ok(csv.includes('Phone 1 - Type,Phone 1 - Value'));
+  assert.ok(csv.includes('Mobile,+573001234567'));
+  assert.ok(csv.includes('Empresa WhatsApp'));
+  assert.ok(csv.includes('"Ana,"'));
 });

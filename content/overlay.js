@@ -278,6 +278,24 @@
     return cards.join('\r\n');
   }
 
+  function formatGoogleContactsCSV(contacts) {
+    const headers = ['First Name', 'Middle Name', 'Last Name', 'Name Prefix', 'Name Suffix', 'Phonetic First Name', 'Phonetic Middle Name', 'Phonetic Last Name', 'Organization Name', 'Organization Title', 'Phone 1 - Type', 'Phone 1 - Value', 'Email 1 - Type', 'Email 1 - Value', 'Notes', 'Labels'];
+    const csv = (value) => {
+      const text = value == null ? '' : String(value);
+      return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
+    const rows = contacts.map(c => {
+      const displayName = (c.name || c.savedName || c.pushName || '').trim();
+      const parts = displayName.split(/\s+/).filter(Boolean);
+      const firstName = parts.slice(0, -1).join(' ') || parts[0] || '';
+      const lastName = parts.length > 1 ? parts[parts.length - 1] : '';
+      const phone = c.cleanPhone ? `+${c.cleanPhone}` : (c.phone || '');
+      const source = c.sourceName || c.source || '';
+      return [firstName, '', lastName, '', '', '', '', '', c.isBusiness ? 'Empresa WhatsApp' : '', '', phone ? 'Mobile' : '', phone, '', '', source ? `Extraído de: ${source}` : '', source].map(csv).join(',');
+    });
+    return '\uFEFF' + [headers.map(csv).join(','), ...rows].join('\r\n');
+  }
+
   function formatJSON(contacts, fieldsToExport) {
     const activeFields = fieldsToExport.map(id => FIELD_MAP.get(id)).filter(Boolean);
 
@@ -659,19 +677,22 @@
           0 seleccionados para exportar
         </div>
         <div class="wae-export-group">
-          <button class="wae-btn-export wae-btn-csv" id="wae-btn-export-csv" title="Descargar CSV con las columnas activas">
+          <button class="wae-btn-export wae-btn-csv" id="wae-btn-export-csv" title="Usalo para abrir y editar los contactos en Excel, Google Sheets u otra hoja de cálculo.">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             <span>Descargar CSV (Excel)</span>
           </button>
-          <button class="wae-btn-export wae-btn-vcf" id="wae-btn-export-vcf" title="Descargar vCard para importar a contactos">
+          <button class="wae-btn-export wae-btn-vcf" id="wae-btn-export-vcf" title="Usalo para importar contactos en la agenda del teléfono y después sincronizarlos con Telegram.">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
             <span>Descargar vCard (.vcf)</span>
           </button>
-          <button class="wae-btn-export wae-btn-json" id="wae-btn-export-json" title="Descargar JSON estructurado con las columnas activas">
+          <button class="wae-btn-export wae-btn-google" id="wae-btn-export-google" title="Usalo para importar los contactos directamente en Google Contacts.">
+            <span>Google Contacts CSV</span>
+          </button>
+          <button class="wae-btn-export wae-btn-json" id="wae-btn-export-json" title="Usalo para respaldos técnicos o integraciones que necesiten datos estructurados.">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
             <span>Descargar JSON</span>
           </button>
-          <button class="wae-btn-export" id="wae-btn-copy" title="Copiar al portapapeles según las columnas activas">
+          <button class="wae-btn-export" id="wae-btn-copy" title="Usalo para pegar rápidamente los contactos en otra aplicación o documento.">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             <span>Copiar Datos</span>
           </button>
@@ -842,6 +863,7 @@
 
     document.getElementById('wae-btn-export-csv').addEventListener('click', () => exportData('csv'));
     document.getElementById('wae-btn-export-vcf').addEventListener('click', () => exportData('vcf'));
+    document.getElementById('wae-btn-export-google').addEventListener('click', () => exportData('google'));
     document.getElementById('wae-btn-export-json').addEventListener('click', () => exportData('json'));
     document.getElementById('wae-btn-copy').addEventListener('click', handleCopyData);
   }
@@ -1136,6 +1158,10 @@
       const vcf = formatVCard(list, fieldsArray);
       downloadFile(vcf, `${sourcePrefix}_${timestamp}.vcf`, 'text/vcard;charset=utf-8;');
       showToast(`Exportados ${list.length} contactos a vCard (.vcf).`);
+    } else if (type === 'google') {
+      const csv = formatGoogleContactsCSV(list);
+      downloadFile(csv, `${sourcePrefix}_${timestamp}_google_contacts.csv`, 'text/csv;charset=utf-8;');
+      showToast(`Exportados ${list.length} contactos para Google Contacts.`);
     } else if (type === 'json') {
       const json = formatJSON(list, fieldsArray);
       downloadFile(json, `${sourcePrefix}_${timestamp}.json`, 'application/json;charset=utf-8;');

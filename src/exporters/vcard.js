@@ -1,10 +1,12 @@
-function escapeVCardValue(value) {
-  if (!value) return '';
+import { normalizeContact } from './normalize.js';
+
+export function escapeVCardValue(value) {
+  if (value === null || value === undefined) return '';
   return String(value)
     .replace(/\\/g, '\\\\')
     .replace(/;/g, '\\;')
     .replace(/,/g, '\\,')
-    .replace(/\n/g, '\\n');
+    .replace(/\r?\n/g, '\\n');
 }
 
 export function exportToVCard(contacts = [], options = {}) {
@@ -15,12 +17,12 @@ export function exportToVCard(contacts = [], options = {}) {
   const includeNote = selectedFields.includes('source') || selectedFields.includes('sourceName') || selectedFields.includes('country');
 
   const cards = contacts.map(c => {
-    const rawNumber = c.cleanPhone || '';
-    const phoneWithPlus = rawNumber.startsWith('+') ? rawNumber : `+${rawNumber}`;
+    const normalized = normalizeContact(c);
+    const phoneWithPlus = normalized.phone;
 
     let displayName = '';
     if (includeName) {
-      displayName = (c.name || c.savedName || c.pushName || '').trim();
+      displayName = normalized.displayName;
     }
     if (!displayName && phoneWithPlus) {
       displayName = `WA ${phoneWithPlus}`;
@@ -35,12 +37,12 @@ export function exportToVCard(contacts = [], options = {}) {
       `N:${escapeVCardValue(displayName)};;;;`
     ];
 
-    if (includePhone && (c.phone || c.cleanPhone)) {
+    if (includePhone && normalized.phone) {
       lines.push(`TEL;TYPE=CELL,VOICE:${phoneWithPlus}`);
     }
 
-    if (includeOrg && c.isBusiness) {
-      lines.push(`ORG:Empresa WhatsApp`);
+    if (includeOrg && normalized.organization) {
+      lines.push(`ORG:${escapeVCardValue(normalized.organization)}`);
     }
 
     const categories = [];
@@ -52,8 +54,8 @@ export function exportToVCard(contacts = [], options = {}) {
       lines.push(`CATEGORIES:${categories.map(escapeVCardValue).join(',')}`);
     }
 
-    if (includeNote && c.sourceName) {
-      lines.push(`NOTE:${escapeVCardValue('Extraído de: ' + c.sourceName)}`);
+    if (includeNote && normalized.note) {
+      lines.push(`NOTE:${escapeVCardValue(normalized.note)}`);
     }
 
     lines.push('END:VCARD');
