@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "WA Contact Extractor Pro",
+  "name": "CLC Agenda",
   "version": "1.3.0",
-  "description": "Extrae contactos de WhatsApp Web por grupos, etiquetas, chats y toda la agenda con exportación a CSV (Excel), vCard (.vcf) y JSON.",
+  "description": "Saca tus contactos de WhatsApp Web y guárdalos en Google Contacts o en el celular. Tu agenda, sin depender de WhatsApp.",
   "permissions": [
     "tabs",
     "storage"
@@ -12,7 +12,7 @@
   ],
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "WA Contact Extractor Pro",
+    "default_title": "CLC Agenda",
     "default_icon": {
       "16": "icons/icon-16.png",
       "48": "icons/icon-48.png",

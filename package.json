@@ -1,7 +1,7 @@
 {
   "name": "wa-contact-extractor-pro",
   "version": "1.0.0",
-  "description": "WhatsApp Web Contact Extractor browser extension (Manifest V3)",
+  "description": "CLC Agenda: export WhatsApp Web contacts to Google Contacts, a phone address book, CSV, or JSON.",
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",

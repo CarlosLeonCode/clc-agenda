@@ -16,7 +16,7 @@ export function exportToJSON(contacts = [], options = {}) {
       exportedAt: new Date().toISOString(),
       totalContacts: contacts.length,
       fields: selectedFields,
-      generator: 'WA Contact Extractor Pro',
+      generator: 'CLC Agenda',
       ...metadata
     },
     contacts: contacts.map(c => {

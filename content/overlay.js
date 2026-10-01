@@ -304,7 +304,7 @@
         exportedAt: new Date().toISOString(),
         totalContacts: contacts.length,
         selectedFields: activeFields.map(f => f.id),
-        generator: 'WA Contact Extractor Pro'
+        generator: 'CLC Agenda'
       },
       contacts: contacts.map(c => {
         const item = {};
@@ -517,7 +517,7 @@
               <path d="M12 2C6.48 2 2 6.48 2 12c0 1.82.49 3.53 1.34 5.01L2 22l5.12-1.33C8.57 21.49 10.24 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.53 0-2.98-.44-4.22-1.19l-.3-.18-3.04.79.81-2.96-.2-.31C4.34 14.93 3.89 13.51 3.89 12 3.89 7.53 7.53 3.89 12 3.89s8.11 3.64 8.11 8.11-3.64 8.11-8.11 8.11z"/>
             </svg>
           </div>
-          <h2>WA Contact Extractor Pro</h2>
+          <h2>CLC Agenda</h2>
           <span class="wae-header-badge">v2.7</span>
         </div>
         <div class="wae-header-actions">
@@ -692,28 +692,25 @@
       </div>
 
       <div class="wae-footer">
-        <div style="font-size: 12.5px; color: #8696a0;" id="wae-selection-count">
-          0 seleccionados para exportar
+        <div class="wae-export-head">
+          <p class="wae-export-lead">Elige dónde queda la agenda.</p>
+          <div class="wae-selection-count" id="wae-selection-count">0 seleccionados para exportar</div>
         </div>
-        <div class="wae-export-group">
-          <button class="wae-btn-export wae-btn-csv" id="wae-btn-export-csv" title="Usalo para abrir y editar los contactos en Excel, Google Sheets u otra hoja de cálculo.">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            <span>Descargar CSV (Excel)</span>
+        <div class="wae-export-grid">
+          <button class="wae-export-choice wae-btn-export wae-btn-google" id="wae-btn-export-google" type="button" title="Columnas exactas para importar en Google Contacts. La agenda queda en tu cuenta de Google, no solo en WhatsApp.">
+            <span class="wae-export-choice-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>CSV para Google Contacts</span>
           </button>
-          <button class="wae-btn-export wae-btn-vcf" id="wae-btn-export-vcf" title="Usalo para importar contactos en la agenda del teléfono y después sincronizarlos con Telegram.">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
-            <span>Descargar vCard (.vcf)</span>
+          <button class="wae-export-choice wae-btn-export wae-btn-vcf" id="wae-btn-export-vcf" type="button" title="Archivo vCard para la agenda del teléfono. Después se puede sincronizar con Telegram.">
+            <span class="wae-export-choice-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>Guardar en el celular</span>
           </button>
-          <button class="wae-btn-export wae-btn-google" id="wae-btn-export-google" title="Usalo para importar los contactos directamente en Google Contacts.">
-            <span>Google Contacts CSV</span>
+          <button class="wae-export-choice wae-btn-export wae-btn-csv" id="wae-btn-export-csv" type="button" title="Columnas que elijas. Para revisar o editar en Excel o Sheets. No los carga en la agenda.">
+            <span class="wae-export-choice-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>CSV para Excel</span>
           </button>
-          <button class="wae-btn-export wae-btn-json" id="wae-btn-export-json" title="Usalo para respaldos técnicos o integraciones que necesiten datos estructurados.">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            <span>Descargar JSON</span>
+          <button class="wae-export-choice wae-btn-export wae-btn-json" id="wae-btn-export-json" type="button" title="Respaldo técnico, o para pasarlos a otra herramienta.">
+            <span class="wae-export-choice-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>Descargar JSON</span>
           </button>
-          <button class="wae-btn-export" id="wae-btn-copy" title="Usalo para pegar rápidamente los contactos en otra aplicación o documento.">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            <span>Copiar Datos</span>
+          <button class="wae-export-choice wae-btn-export wae-btn-copy" id="wae-btn-copy" type="button" title="Para pegarlos en un documento o un mensaje.">
+            <span class="wae-export-choice-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>Copiar</span>
           </button>
         </div>
       </div>
@@ -1172,19 +1169,19 @@
     if (type === 'csv') {
       const csv = formatCSV(list, fieldsArray);
       downloadFile(csv, `${sourcePrefix}_${timestamp}.csv`, 'text/csv;charset=utf-8;');
-      showToast(`Exportados ${list.length} contactos a CSV con ${fieldsArray.length} columnas.`);
+      showToast(`Listo: ${list.length} contactos. Ábrelos en Excel o en una hoja de cálculo.`);
     } else if (type === 'vcf') {
       const vcf = formatVCard(list, fieldsArray);
       downloadFile(vcf, `${sourcePrefix}_${timestamp}.vcf`, 'text/vcard;charset=utf-8;');
-      showToast(`Exportados ${list.length} contactos a vCard (.vcf).`);
+      showToast(`Listo: ${list.length} contactos. Importa el archivo en la agenda del celular.`);
     } else if (type === 'google') {
       const csv = formatGoogleContactsCSV(list);
       downloadFile(csv, `${sourcePrefix}_${timestamp}_google_contacts.csv`, 'text/csv;charset=utf-8;');
-      showToast(`Exportados ${list.length} contactos para Google Contacts.`);
+      showToast(`Listo: ${list.length} contactos. Importa el archivo en Google Contacts.`);
     } else if (type === 'json') {
       const json = formatJSON(list, fieldsArray);
       downloadFile(json, `${sourcePrefix}_${timestamp}.json`, 'application/json;charset=utf-8;');
-      showToast(`Exportados ${list.length} contactos a JSON.`);
+      showToast(`Listo: ${list.length} contactos. El archivo JSON quedó descargado.`);
     }
   }
 

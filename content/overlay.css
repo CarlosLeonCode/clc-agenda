@@ -842,53 +842,102 @@
    10. FOOTER & EXPORT BUTTONS
 ------------------------------------------------------------- */
 .wae-footer {
-  padding: 12px 22px;
+  padding: 14px 22px 16px;
   background: var(--wae-bg-base);
   border-top: 1px solid var(--wae-border);
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.wae-export-head {
+  display: flex;
+  align-items: baseline;
   justify-content: space-between;
-  flex-wrap: wrap;
   gap: 12px;
 }
 
-.wae-export-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+.wae-export-lead {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--wae-text-secondary);
 }
 
-.wae-btn-export {
-  padding: 8px 14px;
-  border-radius: var(--wae-radius-md);
+.wae-selection-count {
   font-size: 12.5px;
-  font-weight: 600;
+  color: #d1d7db;
+  font-variant-numeric: tabular-nums;
+}
+
+.wae-export-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.wae-export-choice {
+  padding: 8px 10px;
+  border-radius: 10px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  text-align: left;
   border: 1px solid var(--wae-border);
   background: var(--wae-bg-card);
   color: #ffffff;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: var(--wae-shadow-btn);
+  min-height: 40px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
 }
 
-.wae-btn-export:hover {
-  transform: translateY(-1px);
+.wae-export-choice:hover {
+  background: var(--wae-bg-card-hover);
 }
 
-.wae-btn-csv {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border-color: rgba(16, 185, 129, 0.35);
+.wae-export-choice-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.wae-export-choice-title svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.wae-btn-copy {
+  grid-column: 1 / -1;
+}
+
+.wae-export-choice:hover {
+  background: var(--wae-bg-card-hover);
+}
+
+.wae-export-choice:focus-visible {
+  outline: 2px solid var(--wae-emerald);
+  outline-offset: 2px;
+}
+
+.wae-btn-google {
+  border-color: rgba(16, 185, 129, 0.55);
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.wae-btn-google:hover {
+  background: rgba(16, 185, 129, 0.22);
 }
 
 .wae-btn-csv:hover {
-  background: var(--wae-emerald);
-  color: #0b141a;
-  border-color: var(--wae-emerald);
+  background: var(--wae-bg-card-hover);
 }
 
 .wae-btn-vcf {
@@ -898,21 +947,23 @@
 }
 
 .wae-btn-vcf:hover {
-  background: var(--wae-blue);
-  color: #0b141a;
-  border-color: var(--wae-blue);
+  background: rgba(56, 189, 248, 0.22);
 }
 
-.wae-btn-json {
-  background: rgba(168, 85, 247, 0.15);
-  color: var(--wae-purple);
-  border-color: rgba(168, 85, 247, 0.35);
-}
+@media (max-width: 720px) {
+  .wae-export-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
 
-.wae-btn-json:hover {
-  background: var(--wae-purple);
-  color: #ffffff;
-  border-color: var(--wae-purple);
+  .wae-export-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wae-btn-copy {
+    grid-column: auto;
+  }
 }
 
 /* Toast Notification */

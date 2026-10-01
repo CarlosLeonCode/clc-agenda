@@ -9,3 +9,11 @@ Thumbs.db
 *.zip
 *.tar.gz
 *.crx
+
+
+# Local Spec-Driven Development (SDD) files
+sdds/*
+!sdds/.gitkeep
+openspec/*
+!openspec/.gitkeep
+.ruff_cache/

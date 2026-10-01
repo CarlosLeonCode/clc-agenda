@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WA Contact Extractor Pro</title>
+  <title>CLC Agenda</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -12,8 +12,8 @@
       <div class="logo-area">
         <img src="../icons/icon-48.png" alt="Logo" class="logo">
         <div>
-          <h2>WA Extractor Pro</h2>
-          <span class="version">v1.3.0 • Manifest V3</span>
+          <h2>CLC Agenda</h2>
+          <span class="version">v1.3.0</span>
         </div>
       </div>
     </div>
@@ -24,12 +24,25 @@
         <div class="status-text" id="status-text">Detectando WhatsApp Web...</div>
       </div>
 
-      <div class="features-list">
-        <div class="feature-item">👥 <strong>Grupos:</strong> Extrae integrantes y administradores.</div>
-        <div class="feature-item">🏷️ <strong>Etiquetas:</strong> Extrae contactos por etiquetas de negocio.</div>
-        <div class="feature-item">📱 <strong>Todos:</strong> Separa guardados de no guardados.</div>
-        <div class="feature-item">📥 <strong>Formatos:</strong> CSV (Excel UTF-8), vCard (.vcf) y JSON.</div>
-      </div>
+      <p class="popup-why">Si te banean WhatsApp, la agenda puede seguir en otro lado.</p>
+      <dl class="format-list">
+        <div>
+          <dt>CSV para Google Contacts</dt>
+          <dd>Columnas exactas para importar en Google Contacts.</dd>
+        </div>
+        <div>
+          <dt>Celular</dt>
+          <dd>Archivo para la agenda del teléfono. Después se puede sincronizar con Telegram.</dd>
+        </div>
+        <div>
+          <dt>Excel</dt>
+          <dd>Para revisar o editar. No los carga en la agenda.</dd>
+        </div>
+        <div>
+          <dt>JSON</dt>
+          <dd>Respaldo técnico, o para otra herramienta.</dd>
+        </div>
+      </dl>
 
       <button id="btn-action" class="btn-primary">
         Cargando...

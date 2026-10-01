@@ -1,6 +1,6 @@
 # Código de Conducta / Code of Conduct
 
-Este proyecto se rige por el [Contributor Covenant](https://www.contributor-covenant.org/es/version/2/1/code_of_conduct/). Al participar, se espera que mantengas este código. Por favor, reportá cualquier comportamiento inaceptable a los administradores del proyecto.
+Este proyecto se rige por el [Contributor Covenant](https://www.contributor-covenant.org/es/version/2/1/code_of_conduct/). Al participar, se espera que se mantenga este código. Por favor, reporte cualquier comportamiento inaceptable a los administradores del proyecto.
 
 ## Nuestro Compromiso
 
