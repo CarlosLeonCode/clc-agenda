@@ -10,10 +10,29 @@ Thumbs.db
 *.tar.gz
 *.crx
 
+# IDE y herramientas de agente
+.agents/
+.antigravity/
+.atl/
+.clckernel.yaml
+.codex/
+.cursor/
+.cursorrules
+.github/
+.husky/
+.vscode/
 
-# Local Spec-Driven Development (SDD) files
-sdds/*
-!sdds/.gitkeep
-openspec/*
-!openspec/.gitkeep
+# Documentos de gobernanza local
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+
+# SDD local
+sdds/
+openspec/
 .ruff_cache/
+
+# Fuentes internas que no van al repo
+src/yaml.js
+start/
+tools/
