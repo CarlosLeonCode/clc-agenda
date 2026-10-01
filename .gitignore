@@ -23,7 +23,6 @@ Thumbs.db
 .vscode/
 
 # Documentos de gobernanza local
-AGENTS.md
 CLAUDE.md
 GEMINI.md
 
