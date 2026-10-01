@@ -319,6 +319,16 @@
   /**
    * Draggable & Dockable Button Setup
    */
+  function clampLauncherPosition(x, y, buttonWidth, buttonHeight, viewportWidth, viewportHeight) {
+    const margin = 10;
+    const maxX = Math.max(margin, viewportWidth - buttonWidth - margin);
+    const maxY = Math.max(margin, viewportHeight - buttonHeight - margin);
+    return {
+      x: Math.min(maxX, Math.max(margin, x)),
+      y: Math.min(maxY, Math.max(margin, y))
+    };
+  }
+
   function setupDraggableLauncher(btn) {
     try {
       const savedPos = localStorage.getItem('wae_btn_pos');
@@ -330,9 +340,18 @@
           dockButton('middle', btn, false);
         } else if (parsed.preset === 'bottom') {
           dockButton('bottom', btn, false);
-        } else if (parsed.x !== undefined && parsed.y !== undefined) {
-          btn.style.left = `${parsed.x}px`;
-          btn.style.top = `${parsed.y}px`;
+        } else if (Number.isFinite(parsed.x) && Number.isFinite(parsed.y)) {
+          const rect = btn.getBoundingClientRect();
+          const position = clampLauncherPosition(
+            parsed.x,
+            parsed.y,
+            btn.offsetWidth || rect.width,
+            btn.offsetHeight || rect.height,
+            window.innerWidth,
+            window.innerHeight
+          );
+          btn.style.left = `${position.x}px`;
+          btn.style.top = `${position.y}px`;
           btn.style.right = 'auto';
           btn.style.bottom = 'auto';
           btn.style.transform = 'none';
