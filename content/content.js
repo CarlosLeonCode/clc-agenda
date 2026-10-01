@@ -26,9 +26,9 @@
     const checkInterval = setInterval(() => {
       const appRoot = document.getElementById('app') || document.querySelector('#main') || document.body;
       if (appRoot && document.readyState === 'complete') {
-        clearInterval(checkInterval);
         if (window.WAExtractorUI && window.WAExtractorUI.init) {
           window.WAExtractorUI.init();
+          clearInterval(checkInterval);
         }
       }
     }, 1000);
