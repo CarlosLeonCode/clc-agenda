@@ -1,6 +1,12 @@
-/* WA Contact Extractor Pro - Ultra-Modern Glassmorphism UI (v2.6) */
+/* CLC Agenda - overlay styles, scoped to the overlay's shadow root */
 
-:root {
+:host {
+  all: initial;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147483000;
+
   --wae-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --wae-emerald: #10b981;
   --wae-emerald-glow: rgba(16, 185, 129, 0.25);
@@ -39,15 +45,20 @@
 #wae-modal-container *,
 #wae-modal-container *::before,
 #wae-modal-container *::after,
-#wae-floating-trigger,
-#wae-floating-trigger * {
+.wae-launcher,
+.wae-launcher * {
   box-sizing: border-box;
+}
+
+:focus-visible {
+  outline: 2px solid var(--wae-wa-green);
+  outline-offset: 2px;
 }
 
 /* -------------------------------------------------------------
    1. FLOATING LAUNCHER (DRAGGABLE & DOCKABLE)
 ------------------------------------------------------------- */
-#wae-floating-trigger {
+.wae-launcher {
   position: fixed;
   bottom: 28px;
   right: 28px;
@@ -70,21 +81,36 @@
   touch-action: none;
 }
 
-#wae-floating-trigger:active {
+.wae-launcher-btn:active {
   cursor: grabbing;
   transform: scale(0.96);
 }
 
-#wae-floating-trigger:hover {
+.wae-launcher:hover {
   box-shadow: 0 12px 32px rgba(37, 211, 102, 0.55), 0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
-#wae-floating-trigger svg {
+.wae-launcher-btn svg {
   width: 20px;
   height: 20px;
   fill: currentColor;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
   flex-shrink: 0;
+}
+
+.wae-launcher-btn {
+  all: unset;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.wae-launcher-btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 4px;
+  border-radius: var(--wae-radius-full);
 }
 
 .wae-dock-controls {
@@ -109,6 +135,14 @@
   font-size: 10px;
   cursor: pointer;
   transition: all 0.15s;
+}
+
+.wae-dock-btn svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
 }
 
 .wae-dock-btn:hover {
@@ -265,12 +299,12 @@
 
 .wae-tab-btn {
   padding: 8px 16px;
-  background: transparent !important;
-  border: none !important;
-  border-radius: var(--wae-radius-md) !important;
-  color: #8696a0 !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
+  background: transparent;
+  border: none;
+  border-radius: var(--wae-radius-md);
+  color: #8696a0;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -279,14 +313,14 @@
 }
 
 .wae-tab-btn:hover {
-  color: #ffffff !important;
-  background: var(--wae-bg-subtle) !important;
+  color: #ffffff;
+  background: var(--wae-bg-subtle);
 }
 
 .wae-tab-btn.wae-active {
-  color: var(--wae-emerald) !important;
-  background: rgba(16, 185, 129, 0.1) !important;
-  border: 1px solid rgba(16, 185, 129, 0.25) !important;
+  color: var(--wae-emerald);
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 /* -------------------------------------------------------------
@@ -326,36 +360,36 @@
 .wae-pill-btn,
 .wae-group-pill-btn,
 .wae-chat-pill-btn {
-  padding: 8px 14px !important;
-  background: var(--wae-bg-card) !important;
-  border: 1px solid var(--wae-border) !important;
-  border-radius: var(--wae-radius-full) !important;
-  color: #e9edef !important;
-  font-size: 12.5px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  transition: all 0.18s ease !important;
+  padding: 8px 14px;
+  background: var(--wae-bg-card);
+  border: 1px solid var(--wae-border);
+  border-radius: var(--wae-radius-full);
+  color: #e9edef;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
 }
 
 .wae-pill-btn:hover,
 .wae-group-pill-btn:hover,
 .wae-chat-pill-btn:hover {
-  background: var(--wae-bg-card-hover) !important;
-  color: #ffffff !important;
+  background: var(--wae-bg-card-hover);
+  color: #ffffff;
 }
 
 .wae-pill-btn.wae-active,
 .wae-group-pill-btn.wae-active,
 .wae-chat-pill-btn.wae-active {
-  background: rgba(16, 185, 129, 0.15) !important;
-  color: var(--wae-emerald) !important;
-  border-color: var(--wae-emerald) !important;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--wae-emerald);
+  border-color: var(--wae-emerald);
 }
 
 /* Primary Action Button */
 .wae-btn-primary {
   background: linear-gradient(135deg, var(--wae-emerald) 0%, var(--wae-emerald-dark) 100%);
-  color: #ffffff !important;
+  color: #ffffff;
   border: none;
   padding: 10px 20px;
   border-radius: var(--wae-radius-md);
@@ -609,27 +643,27 @@
 }
 
 .wae-preset-btn {
-  background: var(--wae-bg-card) !important;
-  border: 1px solid var(--wae-border) !important;
-  color: #e9edef !important;
-  border-radius: var(--wae-radius-full) !important;
-  padding: 4px 11px !important;
-  font-size: 11.5px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  transition: all 0.15s ease !important;
-  white-space: nowrap !important;
+  background: var(--wae-bg-card);
+  border: 1px solid var(--wae-border);
+  color: #e9edef;
+  border-radius: var(--wae-radius-full);
+  padding: 4px 11px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 .wae-preset-btn:hover {
-  color: #ffffff !important;
-  background: var(--wae-bg-card-hover) !important;
+  color: #ffffff;
+  background: var(--wae-bg-card-hover);
 }
 
 .wae-preset-btn.wae-active {
-  background: rgba(16, 185, 129, 0.15) !important;
-  color: var(--wae-emerald) !important;
-  border-color: var(--wae-emerald) !important;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--wae-emerald);
+  border-color: var(--wae-emerald);
 }
 
 .wae-fields-grid {
@@ -992,3 +1026,21 @@
   transform: translateY(0);
   opacity: 1;
 }
+
+.wae-toast.wae-toast-error {
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* Table cells and empty states */
+.wae-cell-name { font-weight: 600; color: var(--wae-text-primary); }
+.wae-cell-empty { color: var(--wae-text-muted); font-style: italic; }
+.wae-cell-phone { font-family: monospace; font-size: 13px; color: var(--wae-blue); font-weight: 600; }
+.wae-cell-mono { font-family: monospace; font-size: 13px; color: var(--wae-text-secondary); }
+.wae-cell-muted { color: var(--wae-text-muted); font-size: 12px; }
+.wae-empty { color: var(--wae-text-muted); font-size: 13px; padding: 18px; text-align: center; grid-column: 1 / -1; }
+.wae-chip-archived { font-size: 10px; background: rgba(251, 191, 36, 0.15); color: var(--wae-amber); padding: 1px 6px; border-radius: 4px; font-weight: 700; }
+.wae-stat-total { --card-accent: var(--wae-emerald); }
+.wae-stat-saved { --card-accent: var(--wae-blue); }
+.wae-stat-unsaved { --card-accent: var(--wae-amber); }
+.wae-stat-admin { --card-accent: var(--wae-rose); }
+.wae-stat-card .wae-stat-card-value { color: var(--card-accent); }

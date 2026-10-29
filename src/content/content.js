@@ -22,9 +22,7 @@ waitForWhatsApp();
 if (chrome.runtime && chrome.runtime.onMessage) {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'OPEN_EXTRACTOR') {
-      const trigger = document.getElementById('wae-floating-trigger');
-      if (trigger) {
-        trigger.click();
+      if (window.WAExtractorUI && window.WAExtractorUI.open && window.WAExtractorUI.open()) {
         sendResponse({ success: true });
       } else {
         sendResponse({ success: false, error: 'Overlay not ready' });

@@ -20,6 +20,6 @@ Para probar la extensión localmente mientras desarrollas:
 2. Abre Chrome (o Brave/Edge) y ve a `chrome://extensions/`.
 3. Activa el "Modo de desarrollador".
 4. Haz clic en "Cargar descomprimida" y selecciona la carpeta del proyecto.
-5. Cualquier cambio en `popup/`, `content/overlay.css` o `src/` (ya compilado) va a requerir que refresques la extensión desde la página de extensiones y luego recargues WhatsApp Web.
+5. Cualquier cambio en `popup/` o `src/` (ya compilado) va a requerir que refresques la extensión desde la página de extensiones y luego recargues WhatsApp Web.
 
 Cualquier mejora es bienvenida. Abre un Issue si tienes dudas o encontraste un error.

@@ -13,6 +13,8 @@ const options = {
   },
   outdir: 'dist',
   bundle: true,
+  // The overlay injects its stylesheet into its own shadow root
+  loader: { '.css': 'text' },
   format: 'iife',
   target: 'chrome111',
   minify: false,

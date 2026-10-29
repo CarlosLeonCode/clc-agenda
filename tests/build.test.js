@@ -40,3 +40,16 @@ test('Build: phone cleaning has a single source of truth in src/core/phone.js', 
     .map(file => path.relative(srcDir, file));
   assert.deepEqual(definers, [path.join('core', 'phone.js')]);
 });
+
+test('Build: overlay styles are bundled into the shadow root without !important', () => {
+  const code = fs.readFileSync(new URL('dist/overlay.js', root), 'utf8');
+  assert.doesNotMatch(code, /!important/);
+  const manifest = JSON.parse(fs.readFileSync(new URL('manifest.json', root), 'utf8'));
+  assert.ok(manifest.content_scripts.every(cs => !cs.css), 'no page-level stylesheet in the manifest');
+});
+
+test('Build: overlay templates use CSS tokens instead of inline colors', () => {
+  const source = fs.readFileSync(new URL('src/ui/overlay.js', root), 'utf8');
+  assert.doesNotMatch(source, /style="[^"]*(color|background)/);
+  assert.doesNotMatch(source, /rgba?\(/);
+});

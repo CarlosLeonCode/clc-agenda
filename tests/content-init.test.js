@@ -57,3 +57,28 @@ test('content initialization keeps polling until the overlay API is available', 
   assert.equal(intervals.size, 0);
   assert.equal(cleared.length, 1);
 });
+
+test('content bridge opens the overlay through its API when the popup asks', () => {
+  const source = fs.readFileSync(new URL('../dist/content.js', import.meta.url), 'utf8');
+  let listener = null;
+  let opened = 0;
+  const context = {
+    console: { log() {}, error() {} },
+    setInterval() { return 1; },
+    clearInterval() {},
+    document: { readyState: 'loading', getElementById() { return null; }, querySelector() { return null; } },
+    chrome: { runtime: { onMessage: { addListener(fn) { listener = fn; } } } },
+    WAExtractorUI: { init() {}, open() { opened += 1; return true; } }
+  };
+  context.window = context;
+  vm.runInNewContext(source, context, { filename: 'content.js' });
+
+  const responses = [];
+  listener({ action: 'OPEN_EXTRACTOR' }, {}, r => responses.push({ ...r }));
+  assert.equal(opened, 1);
+  assert.deepEqual(responses, [{ success: true }]);
+
+  context.WAExtractorUI = undefined;
+  listener({ action: 'OPEN_EXTRACTOR' }, {}, r => responses.push({ ...r }));
+  assert.deepEqual(responses[1], { success: false, error: 'Overlay not ready' });
+});

@@ -30,9 +30,6 @@
       "matches": [
         "https://web.whatsapp.com/*"
       ],
-      "css": [
-        "content/overlay.css"
-      ],
       "js": [
         "dist/overlay.js",
         "dist/content.js"

@@ -1,8 +1,9 @@
 /**
- * CLC Agenda - Floating UI Overlay Manager (v2.7)
- * Archived Chats & Groups Support, Top-Aligned Column Selector,
- * Spacious Table View, Webpack Sync, Real-Time Dynamic Table.
+ * CLC Agenda - Floating UI Overlay Manager
+ * Renders inside a Shadow DOM root so WhatsApp's CSS and ours never collide.
  */
+
+import styles from './overlay.css';
 
 import { FIELD_DEFINITIONS } from '../core/fields.js';
 import { exportToCSV } from '../exporters/csv.js';
@@ -10,8 +11,12 @@ import { exportToVCard } from '../exporters/vcard.js';
 import { exportToGoogleContactsCSV } from '../exporters/google-contacts.js';
 import { exportToJSON } from '../exporters/json.js';
 import { clampLauncherPosition } from './launcher-position.js';
+import { nextTabIndex, nextFocusIndex } from './a11y.js';
 import { PAGE_SIZE, contactKey, filterContacts, getExportList, setSelectionFor, areAllSelected, paginate } from './selection.js';
 
+let host = null;
+let shadow = null;
+let lastFocused = null;
 let overviewData = null;
 let activeTab = 'groups';
 let currentFilter = 'all';
@@ -27,42 +32,46 @@ let groupSearchTerm = '';
 const CELL_RENDERERS = {
   name: (c) => {
     const name = c.name || c.savedName || c.pushName;
-    if (!name) return '<span style="color: var(--wae-text-muted); font-style: italic;">Sin Nombre</span>';
-    return `<span style="font-weight: 600; color: #ffffff;">${escapeHTML(name)}</span>`;
+    if (!name) return '<span class="wae-cell-empty">Sin nombre</span>';
+    return `<span class="wae-cell-name">${escapeHTML(name)}</span>`;
   },
   phone: (c) => {
     const phone = c.phone || (c.cleanPhone ? `+${c.cleanPhone}` : '-');
-    return `<span style="font-family: monospace; font-size: 13px; color: var(--wae-blue); font-weight: 600;">${escapeHTML(phone)}</span>`;
+    return `<span class="wae-cell-phone">${escapeHTML(phone)}</span>`;
   },
   cleanPhone: (c) => {
     const num = c.cleanPhone || '-';
-    return `<span style="font-family: monospace; font-size: 13px; color: #e9edef;">${escapeHTML(num)}</span>`;
+    return `<span class="wae-cell-mono">${escapeHTML(num)}</span>`;
   },
   isMyContact: (c) => {
     return `<span class="wae-tag ${c.isMyContact ? 'wae-tag-yes' : 'wae-tag-no'}">${c.isMyContact ? 'En agenda' : 'No guardado'}</span>`;
   },
   isAdmin: (c) => {
     if (c.isAdmin) return '<span class="wae-tag wae-tag-admin">Admin</span>';
-    return '<span style="color: #8696a0; font-size: 12px;">Miembro</span>';
+    return '<span class="wae-cell-muted">Miembro</span>';
   },
   isBusiness: (c) => {
     if (c.isBusiness) return '<span class="wae-tag wae-tag-yes">Empresa</span>';
-    return '<span style="color: #8696a0; font-size: 12px;">Personal</span>';
+    return '<span class="wae-cell-muted">Personal</span>';
   },
   country: (c) => {
-    return `<span style="font-size: 12px; color: #ffffff; font-weight: 500;">${escapeHTML(c.country || 'Desconocido')}</span>`;
+    return `<span>${escapeHTML(c.country || 'Desconocido')}</span>`;
   },
   sourceName: (c) => {
-    return `<span style="font-size: 11.5px; color: #8696a0;">${escapeHTML(c.sourceName || c.source || '-')}</span>`;
+    return `<span class="wae-cell-muted">${escapeHTML(c.sourceName || c.source || '-')}</span>`;
   },
   id: (c) => {
-    return `<span style="font-family: monospace; font-size: 11px; color: #8696a0;">${escapeHTML(c.id || '-')}</span>`;
+    return `<span class="wae-cell-mono wae-cell-muted">${escapeHTML(c.id || '-')}</span>`;
   }
 };
 
 const AVAILABLE_FIELDS = FIELD_DEFINITIONS.map(f => ({ ...f, renderCell: CELL_RENDERERS[f.id] }));
 
 let selectedFields = new Set(['name', 'phone']);
+
+function byId(id) {
+  return shadow ? shadow.getElementById(id) : null;
+}
 
 function escapeHTML(str) {
   if (!str && str !== 0) return '';
@@ -107,14 +116,9 @@ function sendPageRequest(action, payload = {}) {
 }
 
 function showToast(message, isError = false) {
-  let toast = document.getElementById('wae-toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'wae-toast';
-    toast.className = 'wae-toast';
-    document.body.appendChild(toast);
-  }
-  toast.style.borderColor = isError ? 'rgba(239, 68, 68, 0.5)' : 'rgba(16, 185, 129, 0.5)';
+  const toast = byId('wae-toast');
+  if (!toast) return;
+  toast.classList.toggle('wae-toast-error', isError);
   toast.textContent = String(message);
   toast.classList.add('wae-show');
   setTimeout(() => {
@@ -128,10 +132,10 @@ function downloadFile(content, fileName, mimeType) {
   const a = document.createElement('a');
   a.href = url;
   a.download = fileName;
-  document.body.appendChild(a);
+  shadow.appendChild(a);
   a.click();
   setTimeout(() => {
-    document.body.removeChild(a);
+    a.remove();
     URL.revokeObjectURL(url);
   }, 100);
 }
@@ -140,103 +144,91 @@ function getActiveOrderedFields() {
   return AVAILABLE_FIELDS.filter(f => selectedFields.has(f.id));
 }
 
+const CHAT_ICON = '<path d="M12 2C6.48 2 2 6.48 2 12c0 1.82.49 3.53 1.34 5.01L2 22l5.12-1.33C8.57 21.49 10.24 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.53 0-2.98-.44-4.22-1.19l-.3-.18-3.04.79.81-2.96-.2-.31C4.34 14.93 3.89 13.51 3.89 12 3.89 7.53 7.53 3.89 12 3.89s8.11 3.64 8.11 8.11-3.64 8.11-8.11 8.11z"/>';
+const FOCUSABLE = 'button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])';
+
 /**
- * Draggable & Dockable Button Setup
+ * Draggable & dockable launcher (pointer events cover mouse, pen and touch)
  */
-function setupDraggableLauncher(btn) {
+function setupDraggableLauncher(launcher, btn) {
   try {
     const savedPos = localStorage.getItem('wae_btn_pos');
     if (savedPos) {
       const parsed = JSON.parse(savedPos);
-      if (parsed.preset === 'top') {
-        dockButton('top', btn, false);
-      } else if (parsed.preset === 'middle') {
-        dockButton('middle', btn, false);
-      } else if (parsed.preset === 'bottom') {
-        dockButton('bottom', btn, false);
+      if (parsed.preset === 'top' || parsed.preset === 'middle' || parsed.preset === 'bottom') {
+        dockButton(parsed.preset, launcher, false);
       } else if (Number.isFinite(parsed.x) && Number.isFinite(parsed.y)) {
-        const rect = btn.getBoundingClientRect();
         const position = clampLauncherPosition(
           parsed.x,
           parsed.y,
-          btn.offsetWidth || rect.width,
-          btn.offsetHeight || rect.height,
+          launcher.offsetWidth,
+          launcher.offsetHeight,
           window.innerWidth,
           window.innerHeight
         );
-        btn.style.left = `${position.x}px`;
-        btn.style.top = `${position.y}px`;
-        btn.style.right = 'auto';
-        btn.style.bottom = 'auto';
-        btn.style.transform = 'none';
+        moveLauncher(launcher, position.x, position.y);
       }
     }
   } catch (e) {}
 
-  let isDragging = false;
-  let startX, startY, origLeft, origTop;
-  let dragThreshold = 5;
-  let hasMoved = false;
+  const dragThreshold = 5;
+  let drag = null;
+  let suppressClick = false;
 
-  btn.addEventListener('mousedown', (e) => {
-    if (e.target.closest('.wae-dock-controls')) return;
-    isDragging = true;
-    hasMoved = false;
-    startX = e.clientX;
-    startY = e.clientY;
-
-    const rect = btn.getBoundingClientRect();
-    origLeft = rect.left;
-    origTop = rect.top;
-
-    btn.style.left = `${origLeft}px`;
-    btn.style.top = `${origTop}px`;
-    btn.style.right = 'auto';
-    btn.style.bottom = 'auto';
-    btn.style.transform = 'none';
-
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
+  btn.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    const rect = launcher.getBoundingClientRect();
+    drag = { startX: e.clientX, startY: e.clientY, origLeft: rect.left, origTop: rect.top, moved: false };
+    btn.setPointerCapture(e.pointerId);
   });
 
-  function onMouseMove(e) {
-    if (!isDragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
+  btn.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+    if (!drag.moved && Math.abs(dx) <= dragThreshold && Math.abs(dy) <= dragThreshold) return;
+    drag.moved = true;
+    const position = clampLauncherPosition(
+      drag.origLeft + dx,
+      drag.origTop + dy,
+      launcher.offsetWidth,
+      launcher.offsetHeight,
+      window.innerWidth,
+      window.innerHeight
+    );
+    moveLauncher(launcher, position.x, position.y);
+  });
 
-    if (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold) {
-      hasMoved = true;
-    }
-
-    if (hasMoved) {
-      let newX = origLeft + dx;
-      let newY = origTop + dy;
-
-      const maxW = window.innerWidth - btn.offsetWidth - 10;
-      const maxH = window.innerHeight - btn.offsetHeight - 10;
-      newX = Math.max(10, Math.min(maxW, newX));
-      newY = Math.max(10, Math.min(maxH, newY));
-
-      btn.style.left = `${newX}px`;
-      btn.style.top = `${newY}px`;
-    }
-  }
-
-  function onMouseUp(e) {
-    if (!isDragging) return;
-    isDragging = false;
-    document.removeEventListener('mousemove', onMouseMove);
-    document.removeEventListener('mouseup', onMouseUp);
-
-    if (hasMoved) {
-      const rect = btn.getBoundingClientRect();
+  btn.addEventListener('pointerup', () => {
+    if (!drag) return;
+    suppressClick = drag.moved;
+    if (drag.moved) {
+      const rect = launcher.getBoundingClientRect();
       try {
         localStorage.setItem('wae_btn_pos', JSON.stringify({ x: rect.left, y: rect.top, preset: 'custom' }));
       } catch (e) {}
-    } else {
-      openModal();
     }
-  }
+    drag = null;
+  });
+
+  btn.addEventListener('pointercancel', () => { drag = null; });
+
+  // Keyboard activation and plain clicks open the dialog; a drag does not
+  btn.addEventListener('click', () => {
+    if (suppressClick) {
+      suppressClick = false;
+      return;
+    }
+    openModal();
+  });
+}
+
+function moveLauncher(launcher, x, y) {
+  launcher.style.left = `${x}px`;
+  launcher.style.top = `${y}px`;
+  launcher.style.right = 'auto';
+  launcher.style.bottom = 'auto';
+  launcher.style.transform = 'none';
 }
 
 function dockButton(position, btn, save = true) {
@@ -261,27 +253,59 @@ function dockButton(position, btn, save = true) {
   if (save) {
     try {
       localStorage.setItem('wae_btn_pos', JSON.stringify({ preset: position }));
-      showToast(`Botón anclado a: ${position === 'top' ? 'Arriba' : position === 'middle' ? 'Al Medio' : 'Abajo'}`);
+      showToast(`Botón movido ${position === 'top' ? 'arriba' : position === 'middle' ? 'al medio' : 'abajo'}`);
     } catch (e) {}
   }
 }
 
+function isModalOpen() {
+  const modal = byId('wae-modal-container');
+  return Boolean(modal && modal.classList.contains('wae-active'));
+}
+
 function openModal() {
-  const modal = document.getElementById('wae-modal-container');
-  const backdrop = document.getElementById('wae-backdrop');
-  if (modal && backdrop) {
-    modal.classList.add('wae-active');
-    backdrop.classList.add('wae-active');
-    loadOverview();
-  }
+  const modal = byId('wae-modal-container');
+  const backdrop = byId('wae-backdrop');
+  if (!modal || !backdrop) return false;
+  if (isModalOpen()) return true;
+
+  lastFocused = shadow.activeElement || byId('wae-launcher-btn');
+  modal.classList.add('wae-active');
+  backdrop.classList.add('wae-active');
+  modal.inert = false;
+  const activeTabBtn = modal.querySelector('[role="tab"][aria-selected="true"]');
+  if (activeTabBtn) activeTabBtn.focus();
+  loadOverview();
+  return true;
 }
 
 function closeModal() {
-  const modal = document.getElementById('wae-modal-container');
-  const backdrop = document.getElementById('wae-backdrop');
-  if (modal && backdrop) {
-    modal.classList.remove('wae-active');
-    backdrop.classList.remove('wae-active');
+  const modal = byId('wae-modal-container');
+  const backdrop = byId('wae-backdrop');
+  if (!modal || !backdrop) return;
+  modal.classList.remove('wae-active');
+  backdrop.classList.remove('wae-active');
+  modal.inert = true;
+  const returnTo = lastFocused && lastFocused.isConnected ? lastFocused : byId('wae-launcher-btn');
+  if (returnTo) returnTo.focus();
+}
+
+function handleModalKeydown(e) {
+  if (!isModalOpen()) return;
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    closeModal();
+    return;
+  }
+  if (e.key === 'Tab') {
+    const modal = byId('wae-modal-container');
+    const focusables = Array.from(modal.querySelectorAll(FOCUSABLE))
+      .filter(el => !el.disabled && el.getClientRects().length > 0);
+    const next = nextFocusIndex(focusables.indexOf(shadow.activeElement), focusables.length, e.shiftKey);
+    if (next !== null) {
+      e.preventDefault();
+      focusables[next].focus();
+    }
   }
 }
 
@@ -289,54 +313,79 @@ function closeModal() {
  * UI Initialization
  */
 function initUI() {
-  if (document.getElementById('wae-floating-trigger')) return;
+  if (host) return;
 
-  // 1. Floating trigger button
-  const trigger = document.createElement('div');
-  trigger.id = 'wae-floating-trigger';
-  trigger.innerHTML = `
-    <svg viewBox="0 0 24 24">
-      <path d="M12 2C6.48 2 2 6.48 2 12c0 1.82.49 3.53 1.34 5.01L2 22l5.12-1.33C8.57 21.49 10.24 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.53 0-2.98-.44-4.22-1.19l-.3-.18-3.04.79.81-2.96-.2-.31C4.34 14.93 3.89 13.51 3.89 12 3.89 7.53 7.53 3.89 12 3.89s8.11 3.64 8.11 8.11-3.64 8.11-8.11 8.11zM17.06 14.5c-.28-.14-1.65-.81-1.9-.9-.26-.1-.44-.14-.63.14-.19.28-.73.9-.9 1.09-.17.19-.34.21-.62.07-.28-.14-1.19-.44-2.27-1.4-.84-.75-1.4-1.68-1.57-1.96-.17-.28-.02-.43.12-.57.13-.13.28-.34.42-.51.14-.17.19-.28.28-.47.1-.19.05-.35-.02-.49-.07-.14-.63-1.52-.86-2.08-.23-.55-.46-.48-.63-.49h-.54c-.19 0-.49.07-.75.35s-1 1-1 2.43 1.02 2.82 1.17 3.01c.14.19 2.01 3.07 4.87 4.31.68.29 1.21.47 1.63.6.69.22 1.31.19 1.81.12.55-.08 1.65-.67 1.88-1.32.24-.65.24-1.21.17-1.32-.07-.12-.26-.19-.54-.33z"/>
-    </svg>
-    <span>Extraer Contactos</span>
-    <div class="wae-dock-controls" title="Anclar posición">
-      <button class="wae-dock-btn" data-dock="top" title="Mover Arriba">⬆</button>
-      <button class="wae-dock-btn" data-dock="middle" title="Mover al Medio">⏺</button>
-      <button class="wae-dock-btn" data-dock="bottom" title="Mover Abajo">⬇</button>
+  host = document.createElement('div');
+  host.id = 'clc-agenda-root';
+  shadow = host.attachShadow({ mode: 'open' });
+  document.body.appendChild(host);
+
+  const style = document.createElement('style');
+  style.textContent = styles;
+  shadow.appendChild(style);
+
+  // Keystrokes typed in the overlay must not reach WhatsApp's shortcuts
+  for (const type of ['keydown', 'keyup', 'keypress']) {
+    host.addEventListener(type, (e) => e.stopPropagation());
+  }
+  shadow.addEventListener('keydown', handleModalKeydown);
+
+  // 1. Floating launcher
+  const launcher = document.createElement('div');
+  launcher.className = 'wae-launcher';
+  launcher.id = 'wae-launcher';
+  launcher.innerHTML = `
+    <button type="button" class="wae-launcher-btn" id="wae-launcher-btn" aria-haspopup="dialog" aria-controls="wae-modal-container" aria-label="Extraer contactos con CLC Agenda">
+      <svg viewBox="0 0 24 24" aria-hidden="true">${CHAT_ICON}</svg>
+      <span>Extraer contactos</span>
+    </button>
+    <div class="wae-dock-controls" role="group" aria-label="Mover el botón">
+      <button type="button" class="wae-dock-btn" data-dock="top" aria-label="Mover arriba" title="Mover arriba"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+      <button type="button" class="wae-dock-btn" data-dock="middle" aria-label="Mover al medio" title="Mover al medio"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/></svg></button>
+      <button type="button" class="wae-dock-btn" data-dock="bottom" aria-label="Mover abajo" title="Mover abajo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
     </div>
   `;
-  document.body.appendChild(trigger);
-  setupDraggableLauncher(trigger);
+  shadow.appendChild(launcher);
+  setupDraggableLauncher(launcher, byId('wae-launcher-btn'));
 
-  trigger.querySelectorAll('.wae-dock-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const pos = btn.getAttribute('data-dock');
-      dockButton(pos, trigger, true);
+  launcher.querySelectorAll('.wae-dock-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      dockButton(btn.getAttribute('data-dock'), launcher, true);
     });
   });
 
-  // 2. Backdrop & Modal container
+  // 2. Backdrop, dialog and live region for toasts
   const backdrop = document.createElement('div');
   backdrop.id = 'wae-backdrop';
-  document.body.appendChild(backdrop);
+  shadow.appendChild(backdrop);
+
+  const toast = document.createElement('div');
+  toast.id = 'wae-toast';
+  toast.className = 'wae-toast';
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
+  shadow.appendChild(toast);
 
   const modal = document.createElement('div');
   modal.id = 'wae-modal-container';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'wae-title');
+  modal.inert = true;
   modal.innerHTML = `
     <div class="wae-header">
       <div class="wae-header-title">
-        <div class="wae-header-logo-badge">
+        <div class="wae-header-logo-badge" aria-hidden="true">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12c0 1.82.49 3.53 1.34 5.01L2 22l5.12-1.33C8.57 21.49 10.24 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.53 0-2.98-.44-4.22-1.19l-.3-.18-3.04.79.81-2.96-.2-.31C4.34 14.93 3.89 13.51 3.89 12 3.89 7.53 7.53 3.89 12 3.89s8.11 3.64 8.11 8.11-3.64 8.11-8.11 8.11z"/>
           </svg>
         </div>
-        <h2>CLC Agenda</h2>
+        <h2 id="wae-title">CLC Agenda</h2>
         <span class="wae-header-badge">v2.7</span>
       </div>
       <div class="wae-header-actions">
-        <button class="wae-close-btn" id="wae-btn-close" title="Cerrar ventana">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <button type="button" class="wae-close-btn" id="wae-btn-close" aria-label="Cerrar" title="Cerrar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
@@ -344,28 +393,28 @@ function initUI() {
       </div>
     </div>
 
-    <div class="wae-tabs">
-      <button class="wae-tab-btn wae-active" data-tab="groups">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+    <div class="wae-tabs" role="tablist" aria-label="Origen de los contactos">
+      <button type="button" class="wae-tab-btn wae-active" data-tab="groups" role="tab" id="wae-tabbtn-groups" aria-controls="wae-tab-groups" aria-selected="true" tabindex="0">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
         <span>Grupos</span>
       </button>
-      <button class="wae-tab-btn" data-tab="labels">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+      <button type="button" class="wae-tab-btn" data-tab="labels" role="tab" id="wae-tabbtn-labels" aria-controls="wae-tab-labels" aria-selected="false" tabindex="-1">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
         <span>Etiquetas</span>
       </button>
-      <button class="wae-tab-btn" data-tab="all">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+      <button type="button" class="wae-tab-btn" data-tab="all" role="tab" id="wae-tabbtn-all" aria-controls="wae-tab-all" aria-selected="false" tabindex="-1">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
         <span>Todos</span>
       </button>
-      <button class="wae-tab-btn" data-tab="chats">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      <button type="button" class="wae-tab-btn" data-tab="chats" role="tab" id="wae-tabbtn-chats" aria-controls="wae-tab-chats" aria-selected="false" tabindex="-1">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
         <span>Chats</span>
       </button>
     </div>
 
     <div class="wae-body">
       <!-- TAB 1: GRUPOS (SPACIOUS CARDS GRID) -->
-      <div class="wae-tab-pane wae-active" id="wae-tab-groups">
+      <div class="wae-tab-pane wae-active" id="wae-tab-groups" role="tabpanel" aria-labelledby="wae-tabbtn-groups">
         <div class="wae-group-section-header">
           <div class="wae-fields-title-group" style="gap: 8px;">
             <span class="wae-label">👥 Grupos Detectados</span>
@@ -386,24 +435,24 @@ function initUI() {
 
         <!-- Groups Cards Grid -->
         <div class="wae-groups-grid" id="wae-groups-container">
-          <div style="color: #8696a0; font-size: 13px; padding: 10px;">Cargando grupos...</div>
+          <div class="wae-empty">Cargando grupos...</div>
         </div>
       </div>
 
       <!-- TAB 2: ETIQUETAS -->
-      <div class="wae-tab-pane" id="wae-tab-labels">
+      <div class="wae-tab-pane" id="wae-tab-labels" role="tabpanel" aria-labelledby="wae-tabbtn-labels">
         <div class="wae-group-section-header">
           <div class="wae-fields-title-group">
             <span class="wae-label">🏷️ Etiquetas de WhatsApp Business</span>
           </div>
         </div>
         <div class="wae-labels-grid" id="wae-labels-container">
-          <div style="color: #8696a0; font-size: 13px;">Cargando etiquetas...</div>
+          <div class="wae-empty">Cargando etiquetas...</div>
         </div>
       </div>
 
       <!-- TAB 3: TODOS -->
-      <div class="wae-tab-pane" id="wae-tab-all">
+      <div class="wae-tab-pane" id="wae-tab-all" role="tabpanel" aria-labelledby="wae-tabbtn-all">
         <p>Extrae y filtra la base de contactos completa disponible en tu WhatsApp Web.</p>
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
           <div class="wae-pills">
@@ -420,7 +469,7 @@ function initUI() {
       </div>
 
       <!-- TAB 4: CHATS -->
-      <div class="wae-tab-pane" id="wae-tab-chats">
+      <div class="wae-tab-pane" id="wae-tab-chats" role="tabpanel" aria-labelledby="wae-tabbtn-chats">
         <p>
           Extrae el nombre y número telefónico de todas las conversaciones individuales (1 a 1) sincronizadas en tu WhatsApp Web.
         </p>
@@ -440,21 +489,21 @@ function initUI() {
       <div class="wae-results-section" id="wae-results-section" style="display: none;">
         <!-- 1. Stats Ribbon -->
         <div class="wae-stats-ribbon">
-          <div class="wae-stat-card" style="--card-accent: var(--wae-emerald);">
+          <div class="wae-stat-card wae-stat-total">
             <div class="wae-stat-card-title">Total Contactos</div>
-            <div class="wae-stat-card-value" id="wae-stat-total" style="color: var(--wae-emerald);">0</div>
+            <div class="wae-stat-card-value" id="wae-stat-total">0</div>
           </div>
-          <div class="wae-stat-card" style="--card-accent: var(--wae-blue);">
+          <div class="wae-stat-card wae-stat-saved">
             <div class="wae-stat-card-title">En Agenda</div>
-            <div class="wae-stat-card-value" id="wae-stat-saved" style="color: var(--wae-blue);">0</div>
+            <div class="wae-stat-card-value" id="wae-stat-saved">0</div>
           </div>
-          <div class="wae-stat-card" style="--card-accent: var(--wae-amber);">
+          <div class="wae-stat-card wae-stat-unsaved">
             <div class="wae-stat-card-title">No Guardados</div>
-            <div class="wae-stat-card-value" id="wae-stat-unsaved" style="color: var(--wae-amber);">0</div>
+            <div class="wae-stat-card-value" id="wae-stat-unsaved">0</div>
           </div>
-          <div class="wae-stat-card" style="--card-accent: var(--wae-rose);">
+          <div class="wae-stat-card wae-stat-admin">
             <div class="wae-stat-card-title">Admins</div>
-            <div class="wae-stat-card-value" id="wae-stat-admin" style="color: var(--wae-rose);">0</div>
+            <div class="wae-stat-card-value" id="wae-stat-admin">0</div>
           </div>
         </div>
 
@@ -529,14 +578,14 @@ function initUI() {
       </div>
     </div>
   `;
-  document.body.appendChild(modal);
+  shadow.appendChild(modal);
 
   renderFieldCheckboxes();
   attachEventListeners();
 }
 
 function renderFieldCheckboxes() {
-  const container = document.getElementById('wae-fields-checkboxes-container');
+  const container = byId('wae-fields-checkboxes-container');
   if (!container) return;
 
   container.innerHTML = AVAILABLE_FIELDS.map(f => {
@@ -572,7 +621,7 @@ function renderFieldCheckboxes() {
 }
 
 function updateFieldSelectionUI() {
-  const container = document.getElementById('wae-fields-checkboxes-container');
+  const container = byId('wae-fields-checkboxes-container');
   if (!container) return;
 
   container.querySelectorAll('.wae-field-item').forEach(item => {
@@ -583,12 +632,12 @@ function updateFieldSelectionUI() {
     if (input) input.checked = isChecked;
   });
 
-  const countSpan = document.getElementById('wae-fields-selected-count');
+  const countSpan = byId('wae-fields-selected-count');
   if (countSpan) {
     countSpan.textContent = `${selectedFields.size} seleccionada${selectedFields.size > 1 ? 's' : ''}`;
   }
 
-  document.querySelectorAll('.wae-preset-btn').forEach(btn => {
+  shadow.querySelectorAll('.wae-preset-btn').forEach(btn => {
     const preset = btn.getAttribute('data-preset');
     let matches = false;
     if (preset === 'name_phone' && selectedFields.size === 2 && selectedFields.has('name') && selectedFields.has('phone')) matches = true;
@@ -614,29 +663,41 @@ function applyFieldPreset(preset) {
 }
 
 function attachEventListeners() {
-  const backdrop = document.getElementById('wae-backdrop');
-  const closeBtn = document.getElementById('wae-btn-close');
+  const backdrop = byId('wae-backdrop');
+  const closeBtn = byId('wae-btn-close');
 
   closeBtn.addEventListener('click', closeModal);
   backdrop.addEventListener('click', closeModal);
 
-  const tabBtns = document.querySelectorAll('.wae-tab-btn');
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      tabBtns.forEach(b => b.classList.remove('wae-active'));
-      btn.classList.add('wae-active');
+  const tabBtns = Array.from(shadow.querySelectorAll('.wae-tab-btn'));
+  const selectTab = (btn) => {
+    tabBtns.forEach(b => {
+      const isActive = b === btn;
+      b.classList.toggle('wae-active', isActive);
+      b.setAttribute('aria-selected', String(isActive));
+      b.tabIndex = isActive ? 0 : -1;
+    });
 
-      const tab = btn.getAttribute('data-tab');
-      activeTab = tab;
+    const tab = btn.getAttribute('data-tab');
+    activeTab = tab;
 
-      document.querySelectorAll('.wae-tab-pane').forEach(p => p.classList.remove('wae-active'));
-      const pane = document.getElementById(`wae-tab-${tab}`);
-      if (pane) pane.classList.add('wae-active');
+    shadow.querySelectorAll('.wae-tab-pane').forEach(p => p.classList.remove('wae-active'));
+    const pane = byId(`wae-tab-${tab}`);
+    if (pane) pane.classList.add('wae-active');
+  };
+  tabBtns.forEach((btn, index) => {
+    btn.addEventListener('click', () => selectTab(btn));
+    btn.addEventListener('keydown', (e) => {
+      const next = nextTabIndex(index, e.key, tabBtns.length);
+      if (next === null) return;
+      e.preventDefault();
+      tabBtns[next].focus();
+      selectTab(tabBtns[next]);
     });
   });
 
   // Todos Tab filter pills
-  const pillBtns = document.querySelectorAll('.wae-pill-btn');
+  const pillBtns = shadow.querySelectorAll('.wae-pill-btn');
   pillBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       pillBtns.forEach(b => b.classList.remove('wae-active'));
@@ -646,7 +707,7 @@ function attachEventListeners() {
   });
 
   // Chats Tab filter pills
-  const chatPillBtns = document.querySelectorAll('.wae-chat-pill-btn');
+  const chatPillBtns = shadow.querySelectorAll('.wae-chat-pill-btn');
   chatPillBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       chatPillBtns.forEach(b => b.classList.remove('wae-active'));
@@ -656,7 +717,7 @@ function attachEventListeners() {
   });
 
   // Groups Tab filter pills
-  const groupPillBtns = document.querySelectorAll('.wae-group-pill-btn');
+  const groupPillBtns = shadow.querySelectorAll('.wae-group-pill-btn');
   groupPillBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       groupPillBtns.forEach(b => b.classList.remove('wae-active'));
@@ -666,18 +727,18 @@ function attachEventListeners() {
     });
   });
 
-  document.querySelectorAll('.wae-preset-btn').forEach(btn => {
+  shadow.querySelectorAll('.wae-preset-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const preset = btn.getAttribute('data-preset');
       applyFieldPreset(preset);
     });
   });
 
-  document.getElementById('wae-btn-extract-all').addEventListener('click', handleExtractAllClick);
-  document.getElementById('wae-btn-extract-chats').addEventListener('click', handleExtractChatsClick);
+  byId('wae-btn-extract-all').addEventListener('click', handleExtractAllClick);
+  byId('wae-btn-extract-chats').addEventListener('click', handleExtractChatsClick);
 
   // Group Search Input
-  const groupSearchInput = document.getElementById('wae-group-search-input');
+  const groupSearchInput = byId('wae-group-search-input');
   if (groupSearchInput) {
     groupSearchInput.addEventListener('input', (e) => {
       groupSearchTerm = e.target.value.toLowerCase().trim();
@@ -686,22 +747,22 @@ function attachEventListeners() {
   }
 
   // Results Search Input
-  document.getElementById('wae-search-input').addEventListener('input', (e) => {
+  byId('wae-search-input').addEventListener('input', (e) => {
     searchTerm = e.target.value.toLowerCase().trim();
     visibleLimit = PAGE_SIZE;
     renderTable();
   });
 
-  document.getElementById('wae-btn-export-csv').addEventListener('click', () => exportData('csv'));
-  document.getElementById('wae-btn-export-vcf').addEventListener('click', () => exportData('vcf'));
-  document.getElementById('wae-btn-export-google').addEventListener('click', () => exportData('google'));
-  document.getElementById('wae-btn-export-json').addEventListener('click', () => exportData('json'));
-  document.getElementById('wae-btn-copy').addEventListener('click', handleCopyData);
+  byId('wae-btn-export-csv').addEventListener('click', () => exportData('csv'));
+  byId('wae-btn-export-vcf').addEventListener('click', () => exportData('vcf'));
+  byId('wae-btn-export-google').addEventListener('click', () => exportData('google'));
+  byId('wae-btn-export-json').addEventListener('click', () => exportData('json'));
+  byId('wae-btn-copy').addEventListener('click', handleCopyData);
 }
 
 function renderGroups() {
-  const container = document.getElementById('wae-groups-container');
-  const countBadge = document.getElementById('wae-groups-count');
+  const container = byId('wae-groups-container');
+  const countBadge = byId('wae-groups-count');
   if (!container || !overviewData) return;
 
   const allGroups = overviewData.groups || [];
@@ -717,7 +778,7 @@ function renderGroups() {
 
   if (filtered.length === 0) {
     container.innerHTML = `
-      <div style="color: #8696a0; font-size: 13px; grid-column: 1 / -1; padding: 18px; text-align: center;">
+      <div class="wae-empty">
         ${allGroups.length === 0 ? 'No se encontraron grupos en la base de datos local.' : 'No hay grupos que coincidan con el filtro o la búsqueda.'}
       </div>
     `;
@@ -726,7 +787,7 @@ function renderGroups() {
 
   container.innerHTML = filtered.map(g => {
     const chipText = g.participantCount > 0 ? `${g.participantCount} miembros` : '⚡ Extraer miembros';
-    const archiveBadge = g.isArchived ? `<span style="font-size: 10px; background: rgba(251, 191, 36, 0.15); color: var(--wae-amber); padding: 1px 6px; border-radius: 4px; font-weight: 700;">📁 Archivada</span> ` : '';
+    const archiveBadge = g.isArchived ? `<span class="wae-chip-archived">Archivado</span> ` : '';
     return `
       <div class="wae-group-card" data-group-id="${escapeHTML(g.id)}">
         <div class="wae-group-card-header">
@@ -756,12 +817,11 @@ async function loadOverview() {
 
     renderGroups();
 
-    const labelsContainer = document.getElementById('wae-labels-container');
+    const labelsContainer = byId('wae-labels-container');
     if (data.labels && data.labels.length > 0) {
       labelsContainer.innerHTML = data.labels.map(l => {
-        const color = l.color || '#10b981';
         return `
-          <div class="wae-label-card" style="--label-color: ${escapeHTML(color)};" data-label-id="${escapeHTML(l.id)}">
+          <div class="wae-label-card" data-label-id="${escapeHTML(l.id)}">
             <div class="wae-label-card-header">
               <span class="wae-label-card-name" title="${escapeHTML(l.name)}">${escapeHTML(l.name)}</span>
               <span class="wae-label-chip">${l.count} contactos</span>
@@ -774,7 +834,10 @@ async function loadOverview() {
         `;
       }).join('');
 
-      labelsContainer.querySelectorAll('.wae-label-card').forEach(card => {
+      labelsContainer.querySelectorAll('.wae-label-card').forEach((card, index) => {
+        // Label colors come from WhatsApp data, so they are set as a property, not markup
+        const color = data.labels[index].color;
+        if (color) card.style.setProperty('--label-color', String(color));
         card.addEventListener('click', () => {
           const labelId = card.getAttribute('data-label-id');
           handleExtractLabelClick(labelId);
@@ -782,7 +845,7 @@ async function loadOverview() {
       });
     } else {
       labelsContainer.innerHTML = `
-        <div style="color: #8696a0; font-size: 13px; grid-column: 1 / -1;">
+        <div class="wae-empty">
           No se detectaron etiquetas de WhatsApp Business activas.
         </div>
       `;
@@ -842,17 +905,17 @@ function setExtractedResults(contacts, sourceDescription) {
   selectedContactIds = new Set(extractedContacts.map(contactKey));
   visibleLimit = PAGE_SIZE;
 
-  const resultsSection = document.getElementById('wae-results-section');
+  const resultsSection = byId('wae-results-section');
   resultsSection.style.display = 'flex';
 
   const savedCount = extractedContacts.filter(c => c.isMyContact).length;
   const unsavedCount = extractedContacts.length - savedCount;
   const adminCount = extractedContacts.filter(c => c.isAdmin).length;
 
-  document.getElementById('wae-stat-total').textContent = extractedContacts.length;
-  document.getElementById('wae-stat-saved').textContent = savedCount;
-  document.getElementById('wae-stat-unsaved').textContent = unsavedCount;
-  document.getElementById('wae-stat-admin').textContent = adminCount;
+  byId('wae-stat-total').textContent = extractedContacts.length;
+  byId('wae-stat-saved').textContent = savedCount;
+  byId('wae-stat-unsaved').textContent = unsavedCount;
+  byId('wae-stat-admin').textContent = adminCount;
 
   showToast(`✅ ${extractedContacts.length} contactos extraídos con éxito.`);
   renderTable();
@@ -862,10 +925,10 @@ function setExtractedResults(contacts, sourceDescription) {
  * Real-Time Table Rendering: Headers and Rows sync with selectedFields
  */
 function renderTable() {
-  const thead = document.getElementById('wae-table-head');
-  const tbody = document.getElementById('wae-table-body');
-  const statsText = document.getElementById('wae-stats-text');
-  const selectionCount = document.getElementById('wae-selection-count');
+  const thead = byId('wae-table-head');
+  const tbody = byId('wae-table-body');
+  const statsText = byId('wae-stats-text');
+  const selectionCount = byId('wae-selection-count');
 
   const activeFields = getActiveOrderedFields();
 
@@ -885,7 +948,7 @@ function renderTable() {
     </tr>
   `;
 
-  const selectAllInput = document.getElementById('wae-select-all');
+  const selectAllInput = byId('wae-select-all');
   if (selectAllInput) {
     selectAllInput.addEventListener('change', (e) => {
       selectedContactIds = setSelectionFor(selectedContactIds, filtered, e.target.checked);
@@ -899,7 +962,7 @@ function renderTable() {
   const totalCols = activeFields.length + 2;
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="${totalCols}" style="text-align:center; padding: 24px; color: #8696a0;">No hay contactos que coincidan con la búsqueda.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${totalCols}" class="wae-empty">No hay contactos que coincidan con la búsqueda.</td></tr>`;
     return;
   }
 
@@ -928,7 +991,7 @@ function renderTable() {
     `;
   }).join('') + loadMoreRow;
 
-  const loadMoreBtn = document.getElementById('wae-btn-load-more');
+  const loadMoreBtn = byId('wae-btn-load-more');
   if (loadMoreBtn) {
     loadMoreBtn.addEventListener('click', () => {
       visibleLimit += PAGE_SIZE;
@@ -1027,4 +1090,7 @@ function handleCopyData() {
   });
 }
 
-window.WAExtractorUI = { init: initUI };
+window.WAExtractorUI = {
+  init: initUI,
+  open: () => Boolean(host) && openModal()
+};
