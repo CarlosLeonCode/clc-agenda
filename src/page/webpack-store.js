@@ -50,11 +50,6 @@ export function initWebpackStore() {
                 if (m.Label && (m.Label._models || m.Label.models || m.Label.get)) store.Label = m.Label;
                 else if (m.default && m.default.Label) store.Label = m.default.Label;
               }
-
-              // Cmd / OpenChat
-              if (!store.Cmd && m.Cmd && m.Cmd.openChatAt) {
-                store.Cmd = m.Cmd;
-              }
             } catch (e) {}
           }
         }

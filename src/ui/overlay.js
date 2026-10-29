@@ -11,6 +11,7 @@ import { exportToVCard } from '../exporters/vcard.js';
 import { exportToGoogleContactsCSV } from '../exporters/google-contacts.js';
 import { exportToJSON } from '../exporters/json.js';
 import { clampLauncherPosition } from './launcher-position.js';
+import { sendPageRequest } from './page-request.js';
 import { nextTabIndex, nextFocusIndex } from './a11y.js';
 import { initialViewState, reduceView, visibleTabs, memberCountLabel, friendlyError, summarize, quickFilterContacts } from './view-state.js';
 import { PAGE_SIZE, contactKey, filterContacts, getExportList, setSelectionFor, areAllSelected, paginate } from './selection.js';
@@ -97,38 +98,6 @@ function escapeHTML(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
-}
-
-function sendPageRequest(action, payload = {}) {
-  return new Promise((resolve, reject) => {
-    const requestId = 'req_' + Math.random().toString(36).substring(2, 9);
-    const timeout = setTimeout(() => {
-      window.removeEventListener('message', handler);
-      reject(new Error('Tiempo de espera agotado al comunicar con WhatsApp Web.'));
-    }, 15000);
-
-    function handler(event) {
-      if (event.source !== window || event.origin !== window.location.origin) return;
-      if (!event.data || event.data.type !== 'WA_EXTRACTOR_RESPONSE') return;
-      if (event.data.requestId === requestId) {
-        clearTimeout(timeout);
-        window.removeEventListener('message', handler);
-        if (event.data.success) {
-          resolve(event.data.data);
-        } else {
-          reject(new Error(event.data.error || 'Error en la extracción.'));
-        }
-      }
-    }
-
-    window.addEventListener('message', handler);
-    window.postMessage({
-      type: 'WA_EXTRACTOR_REQUEST',
-      requestId,
-      action,
-      payload
-    }, window.location.origin);
-  });
 }
 
 function showToast(message, isError = false) {

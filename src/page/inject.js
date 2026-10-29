@@ -33,25 +33,27 @@ function start() {
     }
 
     const { action, requestId, payload } = event.data;
+    // Heartbeat: the UI times out only after a stretch without any message for this request
+    const onProgress = () => window.postMessage({ type: 'WA_EXTRACTOR_PROGRESS', requestId }, window.location.origin);
 
     try {
       let responseData = null;
 
       switch (action) {
         case 'GET_OVERVIEW':
-          responseData = await handleGetOverview();
+          responseData = await handleGetOverview(onProgress);
           break;
         case 'EXTRACT_GROUP':
-          responseData = await handleExtractGroup(payload?.groupId);
+          responseData = await handleExtractGroup(payload?.groupId, onProgress);
           break;
         case 'EXTRACT_LABEL':
-          responseData = await handleExtractLabel(payload?.labelId);
+          responseData = await handleExtractLabel(payload?.labelId, onProgress);
           break;
         case 'EXTRACT_ALL':
-          responseData = await handleExtractAll(payload?.filter || 'all');
+          responseData = await handleExtractAll(payload?.filter || 'all', onProgress);
           break;
         case 'EXTRACT_CHATS':
-          responseData = await handleExtractChats(payload?.filter || 'all');
+          responseData = await handleExtractChats(payload?.filter || 'all', onProgress);
           break;
         default:
           throw new Error(`Acción no reconocida: ${action}`);

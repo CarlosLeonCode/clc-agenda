@@ -1,15 +1,23 @@
 import { cleanPhoneNumber } from '../core/phone.js';
 import { extractParticipantsList, getGroupParticipantCount } from '../core/groups.js';
 import { initWebpackStore, store } from './webpack-store.js';
-import { scanAllIndexedDB } from './scan.js';
+import { scanAllIndexedDB, collectGroupAuthors } from './scan.js';
 import { buildResolvedContact, findActiveOpenGroup } from './resolver.js';
+
+const PROGRESS_EVERY = 250;
+
+// Reports progress every PROGRESS_EVERY resolved contacts so the UI knows the engine is alive
+function progressTicker(onProgress) {
+  let count = 0;
+  return () => { if (++count % PROGRESS_EVERY === 0) onProgress(); };
+}
 
 /**
  * Action: Extract Group (with multi-layer resolution)
  */
-export async function handleExtractGroup(groupId) {
+export async function handleExtractGroup(groupId, onProgress = () => {}) {
   initWebpackStore();
-  const data = await scanAllIndexedDB(true);
+  const data = await scanAllIndexedDB(true, onProgress);
 
   let targetGroupId = groupId;
   if (targetGroupId === 'ACTIVE_DOM' || !targetGroupId) {
@@ -43,7 +51,8 @@ export async function handleExtractGroup(groupId) {
     } catch (e) {}
   }
 
-  // Layer 2: Live Store Chat & Cmd openChatAt trigger
+  // Layer 2: Live Store Chat metadata. Never opens the chat: that would switch
+  // the user's view and could send read receipts.
   if ((!group || extractParticipantsList(group).length === 0) && store && store.Chat) {
     try {
       const liveChat = store.Chat.get(targetGroupId);
@@ -52,13 +61,6 @@ export async function handleExtractGroup(groupId) {
         if (rawChat.groupMetadata) {
           group = rawChat.groupMetadata.__x || rawChat.groupMetadata;
         }
-        if ((!group || extractParticipantsList(group).length === 0) && store.Cmd && store.Cmd.openChatAt) {
-          try {
-            store.Cmd.openChatAt(liveChat);
-            await new Promise(r => setTimeout(r, 450));
-            if (rawChat.groupMetadata) group = rawChat.groupMetadata.__x || rawChat.groupMetadata;
-          } catch (e) {}
-        }
       }
     } catch (e) {}
   }
@@ -66,9 +68,9 @@ export async function handleExtractGroup(groupId) {
   const groupTitle = group?.subject || group?.name || group?.formattedTitle || 'Grupo WhatsApp';
   let participants = extractParticipantsList(group);
 
-  // Layer 3: Group message participants from IndexedDB
-  if (participants.length === 0 && data.groupMessages && data.groupMessages.has(targetGroupId)) {
-    const authorSet = data.groupMessages.get(targetGroupId);
+  // Layer 3: Authors of this group's messages, read on demand from IndexedDB
+  if (participants.length === 0) {
+    const authorSet = await collectGroupAuthors(targetGroupId, onProgress);
     participants = Array.from(authorSet).map(author => ({ id: author }));
   }
 
@@ -102,12 +104,14 @@ export async function handleExtractGroup(groupId) {
 
   const results = [];
   const seenPhones = new Set();
+  const tick = progressTicker(onProgress);
 
   for (const p of participants) {
     const pId = p.id?._serialized || p.id || (typeof p === 'string' ? p : null);
     if (!pId && !p.phone) continue;
 
     const isAdmin = Boolean(p.isAdmin || p.isSuperAdmin || p.admin);
+    tick();
     const contactItem = await buildResolvedContact(p, data, {
       isAdmin: isAdmin,
       source: 'Grupo',
@@ -131,8 +135,8 @@ export async function handleExtractGroup(groupId) {
 /**
  * Action: Extract Label
  */
-export async function handleExtractLabel(labelId) {
-  const data = await scanAllIndexedDB();
+export async function handleExtractLabel(labelId, onProgress = () => {}) {
+  const data = await scanAllIndexedDB(false, onProgress);
   const labelObj = data.labels.get(String(labelId));
   const labelName = labelObj ? labelObj.name : `Etiqueta ${labelId}`;
 
@@ -147,9 +151,11 @@ export async function handleExtractLabel(labelId) {
 
   const results = [];
   const seenPhones = new Set();
+  const tick = progressTicker(onProgress);
 
   for (const id of matchedIds) {
     const raw = data.contactsById.get(id) || data.chats.get(id) || { id };
+    tick();
     const contactItem = await buildResolvedContact(raw, data, {
       labels: [labelName],
       source: 'Etiqueta',
@@ -173,12 +179,14 @@ export async function handleExtractLabel(labelId) {
 /**
  * Action: Extract All Contacts
  */
-export async function handleExtractAll(filter = 'all') {
-  const data = await scanAllIndexedDB();
+export async function handleExtractAll(filter = 'all', onProgress = () => {}) {
+  const data = await scanAllIndexedDB(false, onProgress);
   const results = [];
   const seenPhones = new Set();
+  const tick = progressTicker(onProgress);
 
   for (const [phone, c] of data.contactsByPhone.entries()) {
+    tick();
     const item = await buildResolvedContact(c, data, { source: 'Todos' });
     if (!item || !item.cleanPhone) continue;
 
@@ -203,10 +211,11 @@ export async function handleExtractAll(filter = 'all') {
 /**
  * Action: Extract Chats (with Active / Archived filter)
  */
-export async function handleExtractChats(filter = 'all') {
-  const data = await scanAllIndexedDB();
+export async function handleExtractChats(filter = 'all', onProgress = () => {}) {
+  const data = await scanAllIndexedDB(false, onProgress);
   const results = [];
   const seenPhones = new Set();
+  const tick = progressTicker(onProgress);
 
   for (const [id, ch] of data.chats.entries()) {
     if (id.includes('@g.us')) continue;
@@ -215,6 +224,7 @@ export async function handleExtractChats(filter = 'all') {
     if (filter === 'archived' && !isArchived) continue;
     if (filter === 'active' && isArchived) continue;
 
+    tick();
     const item = await buildResolvedContact(ch, data, {
       source: isArchived ? 'Chats Archivados' : 'Chats',
       sourceName: ch.name || (isArchived ? 'Chat Individual (Archivado)' : 'Chat Individual'),
@@ -237,8 +247,8 @@ export async function handleExtractChats(filter = 'all') {
 /**
  * Action: Get Overview
  */
-export async function handleGetOverview() {
-  const data = await scanAllIndexedDB(true);
+export async function handleGetOverview(onProgress = () => {}) {
+  const data = await scanAllIndexedDB(true, onProgress);
 
   const groupsList = [];
   let totalArchivedGroups = 0;

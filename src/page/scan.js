@@ -3,15 +3,24 @@ import { extractParticipantsList } from '../core/groups.js';
 import { mergeContactRecord } from '../core/contact-record.js';
 import { addToSuffixIndex } from '../core/suffix-match.js';
 import { initWebpackStore, store } from './webpack-store.js';
-import { openDatabase, getAllFromStore } from './indexeddb.js';
+import { openDatabase, getAllFromStore, forEachInStore } from './indexeddb.js';
 
 let cachedDbData = null;
 let lastScanTime = 0;
 
+const MESSAGE_STORES = ['message', 'messages'];
+const MESSAGE_PROGRESS_EVERY = 5000;
+
+async function listDatabases() {
+  if (indexedDB.databases) return indexedDB.databases();
+  return [{ name: 'model-storage' }, { name: 'wawc' }, { name: 'wawc_db_enc' }];
+}
+
 /**
- * Multi-indexed database scan
+ * Multi-indexed database scan. Message stores are skipped: they can hold the
+ * whole chat history and are only read on demand by collectGroupAuthors.
  */
-export async function scanAllIndexedDB(force = false) {
+export async function scanAllIndexedDB(force = false, onProgress = () => {}) {
   initWebpackStore();
   const now = Date.now();
   if (!force && cachedDbData && (now - lastScanTime < 10000)) {
@@ -26,8 +35,7 @@ export async function scanAllIndexedDB(force = false) {
     groups: new Map(),
     labels: new Map(),
     labelAssociations: [],
-    chats: new Map(),
-    groupMessages: new Map()
+    chats: new Map()
   };
 
   function indexRecord(record) {
@@ -59,12 +67,7 @@ export async function scanAllIndexedDB(force = false) {
   }
 
   try {
-    let dbList = [];
-    if (indexedDB.databases) {
-      dbList = await indexedDB.databases();
-    } else {
-      dbList = [{ name: 'model-storage' }, { name: 'wawc' }, { name: 'wawc_db_enc' }];
-    }
+    const dbList = await listDatabases();
 
     for (const dbInfo of dbList) {
       if (!dbInfo.name) continue;
@@ -165,30 +168,11 @@ export async function scanAllIndexedDB(force = false) {
           }
         }
 
-        // 7. Messages (to discover group participants who posted)
-        const msgStores = ['message', 'messages'];
-        for (const s of msgStores) {
-          if (db.objectStoreNames.contains(s)) {
-            const records = await getAllFromStore(db, s);
-            for (const m of records) {
-              const to = m.to?._serialized || m.to;
-              const author = m.author?._serialized || m.author || m.participant?._serialized || m.participant;
-              if (to && typeof to === 'string' && to.includes('@g.us') && author) {
-                let groupSet = result.groupMessages.get(to);
-                if (!groupSet) {
-                  groupSet = new Set();
-                  result.groupMessages.set(to, groupSet);
-                }
-                groupSet.add(author);
-              }
-            }
-          }
-        }
-
         db.close();
       } catch (dbErr) {
         console.warn('[WA Extractor] DB inspect warning:', dbInfo.name, dbErr);
       }
+      onProgress();
     }
   } catch (e) {
     console.error('[WA Extractor] Error scanning IndexedDB:', e);
@@ -201,6 +185,40 @@ export async function scanAllIndexedDB(force = false) {
   cachedDbData = result;
   lastScanTime = Date.now();
   return result;
+}
+
+/**
+ * Authors who posted in one group, read with a cursor so the message history
+ * never loads into memory at once. Fallback for groups without participants.
+ */
+export async function collectGroupAuthors(groupId, onProgress = () => {}) {
+  const authors = new Set();
+  let walked = 0;
+  try {
+    for (const dbInfo of await listDatabases()) {
+      if (!dbInfo.name) continue;
+      try {
+        const db = await openDatabase(dbInfo.name);
+        if (!db) continue;
+        for (const s of MESSAGE_STORES) {
+          await forEachInStore(db, s, (m) => {
+            const to = m.to?._serialized || m.to;
+            const author = m.author?._serialized || m.author || m.participant?._serialized || m.participant;
+            if (to === groupId && author) authors.add(author);
+            // A single message store can be huge: keep the UI's idle timer alive while walking it
+            if (++walked % MESSAGE_PROGRESS_EVERY === 0) onProgress();
+          });
+        }
+        db.close();
+      } catch (dbErr) {
+        console.warn('[WA Extractor] DB inspect warning:', dbInfo.name, dbErr);
+      }
+      onProgress();
+    }
+  } catch (e) {
+    console.error('[WA Extractor] Error reading group messages:', e);
+  }
+  return authors;
 }
 
 function enrichFromStore(result, indexRecord) {
