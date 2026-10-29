@@ -1,6 +1,7 @@
 import { cleanPhoneNumber, isLid, detectCountry } from '../core/phone.js';
 import { mergeContactRecord } from '../core/contact-record.js';
 import { findSuffixMatch } from '../core/suffix-match.js';
+import { matchGroupByTitle } from '../core/group-title.js';
 import { store } from './webpack-store.js';
 
 /**
@@ -138,15 +139,9 @@ export function findActiveOpenGroup(dataBundle) {
 
   const headerTitleEl = document.querySelector('#main header span[title]') || document.querySelector('#main header [dir="auto"]');
   if (headerTitleEl) {
-    const headerTitle = (headerTitleEl.getAttribute('title') || headerTitleEl.textContent || '').trim().toLowerCase();
-    if (headerTitle && dataBundle?.groups) {
-      for (const [id, g] of dataBundle.groups.entries()) {
-        const title = (g.subject || g.name || g.formattedTitle || '').trim().toLowerCase();
-        if (title && (title === headerTitle || headerTitle.includes(title))) {
-          return id;
-        }
-      }
-    }
+    const headerTitle = headerTitleEl.getAttribute('title') || headerTitleEl.textContent || '';
+    const id = matchGroupByTitle(dataBundle?.groups, headerTitle);
+    if (id) return id;
   }
 
   return null;
