@@ -12,7 +12,7 @@ import { exportToGoogleContactsCSV } from '../exporters/google-contacts.js';
 import { exportToJSON } from '../exporters/json.js';
 import { clampLauncherPosition } from './launcher-position.js';
 import { nextTabIndex, nextFocusIndex } from './a11y.js';
-import { initialViewState, reduceView, visibleTabs, memberCountLabel, friendlyError } from './view-state.js';
+import { initialViewState, reduceView, visibleTabs, memberCountLabel, friendlyError, summarize, quickFilterContacts } from './view-state.js';
 import { PAGE_SIZE, contactKey, filterContacts, getExportList, setSelectionFor, areAllSelected, paginate } from './selection.js';
 
 let host = null;
@@ -29,8 +29,11 @@ let extractedContacts = [];
 let selectedContactIds = new Set();
 let searchTerm = '';
 let visibleLimit = PAGE_SIZE;
+let quickFilter = 'all';
 
 const ICONS = {
+  chevronDown: '<svg class="wae-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
+  columns: '<svg class="wae-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></svg>',
   chevron: '<svg class="wae-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>',
   back: '<svg class="wae-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>',
   search: '<svg class="wae-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
@@ -309,7 +312,7 @@ function handleModalKeydown(e) {
   if (!isModalOpen()) return;
   if (e.key === 'Escape') {
     e.preventDefault();
-    closeModal();
+    if (!closePopovers(true)) closeModal();
     return;
   }
   if (e.key === 'Tab') {
@@ -445,53 +448,59 @@ function initUI() {
     <div class="wae-view" id="wae-view-results" hidden>
       <div class="wae-results-top">
         <button type="button" class="wae-back" id="wae-btn-back" aria-label="Volver">${ICONS.back}<span id="wae-results-title"></span></button>
-        <span class="wae-results-count" id="wae-results-count"></span>
       </div>
 
-      <div class="wae-results-body">
-        <div class="wae-stats-ribbon">
-          <div class="wae-stat-card"><span class="wae-stat-card-title">En agenda</span><span class="wae-stat-card-value" id="wae-stat-saved">0</span></div>
-          <div class="wae-stat-card"><span class="wae-stat-card-title">Sin guardar</span><span class="wae-stat-card-value" id="wae-stat-unsaved">0</span></div>
-          <div class="wae-stat-card"><span class="wae-stat-card-title">Admins</span><span class="wae-stat-card-value" id="wae-stat-admin">0</span></div>
-        </div>
+      <div class="wae-summary" id="wae-summary" role="group" aria-label="Filtrar contactos"></div>
 
-        <div class="wae-fields-section">
-          <div class="wae-fields-header">
-            <span class="wae-fields-title">Columnas <span id="wae-fields-selected-count"></span></span>
+      <div class="wae-toolbar">
+        <label class="wae-search">
+          ${ICONS.search}
+          <input type="search" id="wae-search-input" placeholder="Buscar nombre o número" aria-label="Buscar contacto" autocomplete="off">
+        </label>
+        <span class="wae-stats-badge" id="wae-stats-text"></span>
+        <div class="wae-popover-anchor">
+          <button type="button" class="wae-btn" id="wae-btn-columns" aria-haspopup="true" aria-expanded="false" aria-controls="wae-columns-popover">${ICONS.columns}Columnas <span class="wae-muted" id="wae-fields-selected-count"></span></button>
+          <div class="wae-popover" id="wae-columns-popover" role="dialog" aria-label="Columnas" hidden>
             <div class="wae-fields-presets">
               <button type="button" class="wae-preset-btn" data-preset="name_phone">Nombre y teléfono</button>
               <button type="button" class="wae-preset-btn" data-preset="phone_only">Solo teléfonos</button>
               <button type="button" class="wae-preset-btn" data-preset="name_only">Solo nombres</button>
               <button type="button" class="wae-preset-btn" data-preset="all">Todos los datos</button>
             </div>
+            <div class="wae-fields-grid" id="wae-fields-checkboxes-container"></div>
           </div>
-          <div class="wae-fields-grid" id="wae-fields-checkboxes-container"></div>
         </div>
+      </div>
 
-        <div class="wae-toolbar">
-          <label class="wae-search">
-            ${ICONS.search}
-            <input type="search" id="wae-search-input" placeholder="Buscar nombre o número" aria-label="Buscar contacto" autocomplete="off">
-          </label>
-          <span class="wae-stats-badge" id="wae-stats-text"></span>
-        </div>
-
-        <div class="wae-table-wrap">
-          <table class="wae-table" id="wae-main-table">
-            <thead id="wae-table-head"></thead>
-            <tbody id="wae-table-body"></tbody>
-          </table>
-        </div>
+      <div class="wae-table-wrap">
+        <table class="wae-table" id="wae-main-table">
+          <thead id="wae-table-head"></thead>
+          <tbody id="wae-table-body"></tbody>
+        </table>
       </div>
 
       <footer class="wae-footer">
         <span class="wae-selection-count" id="wae-selection-count"></span>
-        <div class="wae-export-grid">
-          <button type="button" class="wae-btn" id="wae-btn-copy">Copiar</button>
-          <button type="button" class="wae-btn" id="wae-btn-export-json">JSON</button>
-          <button type="button" class="wae-btn" id="wae-btn-export-csv">Excel (CSV)</button>
-          <button type="button" class="wae-btn" id="wae-btn-export-vcf">Celular (.vcf)</button>
-          <button type="button" class="wae-btn wae-btn-primary" id="wae-btn-export-google">Google Contacts</button>
+        <div class="wae-export-actions">
+          <div class="wae-popover-anchor">
+            <button type="button" class="wae-btn" id="wae-btn-more" aria-haspopup="menu" aria-expanded="false" aria-controls="wae-more-menu">Más ${ICONS.chevronDown}</button>
+            <div class="wae-popover wae-menu" id="wae-more-menu" role="menu" aria-label="Más formatos" hidden>
+              <button type="button" class="wae-menu-item" role="menuitem" id="wae-btn-export-csv">
+                <span class="wae-menu-title">Excel (CSV)</span>
+                <span class="wae-menu-desc">Las columnas que elegiste, para revisar en Excel o Sheets.</span>
+              </button>
+              <button type="button" class="wae-menu-item" role="menuitem" id="wae-btn-export-json">
+                <span class="wae-menu-title">JSON</span>
+                <span class="wae-menu-desc">Respaldo técnico o para pasarlos a otra herramienta.</span>
+              </button>
+              <button type="button" class="wae-menu-item" role="menuitem" id="wae-btn-copy">
+                <span class="wae-menu-title">Copiar</span>
+                <span class="wae-menu-desc">Para pegarlos en un documento o un mensaje.</span>
+              </button>
+            </div>
+          </div>
+          <button type="button" class="wae-btn" id="wae-btn-export-vcf" title="Archivo vCard para importar en la agenda del celular.">Celular (.vcf)</button>
+          <button type="button" class="wae-btn wae-btn-primary" id="wae-btn-export-google" title="Archivo listo para importar en Google Contacts. La agenda queda en tu cuenta de Google.">Google Contacts</button>
         </div>
       </footer>
     </div>
@@ -564,6 +573,29 @@ function attachEventListeners() {
     dispatch({ type: 'BACK' });
     const row = lastRequestKey && shadow.querySelector(`[data-request="${CSS.escape(lastRequestKey)}"]`);
     (row || shadow.querySelector('.wae-tab[aria-selected="true"]')).focus();
+  });
+
+  byId('wae-summary').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-quick-filter]');
+    if (btn) applyQuickFilter(btn.getAttribute('data-quick-filter'));
+  });
+
+  byId('wae-btn-columns').addEventListener('click', (e) => togglePopover(e.currentTarget));
+  byId('wae-btn-more').addEventListener('click', (e) => togglePopover(e.currentTarget));
+  shadow.addEventListener('pointerdown', (e) => {
+    if (!e.target.closest('.wae-popover-anchor')) closePopovers(false);
+  });
+
+  const menuItems = Array.from(shadow.querySelectorAll('.wae-menu-item'));
+  menuItems.forEach((item, index) => {
+    item.addEventListener('click', () => closePopovers(true));
+    item.addEventListener('keydown', (e) => {
+      const key = { ArrowDown: 'ArrowRight', ArrowUp: 'ArrowLeft' }[e.key] || e.key;
+      const next = nextTabIndex(index, key, menuItems.length);
+      if (next === null) return;
+      e.preventDefault();
+      menuItems[next].focus();
+    });
   });
 
   shadow.querySelectorAll('.wae-preset-btn').forEach(btn => {
@@ -744,20 +776,73 @@ async function runExtraction(key, action, payload, titleOf) {
 function setExtractedResults(contacts, title) {
   extractedContacts = contacts || [];
   selectedContactIds = new Set(extractedContacts.map(contactKey));
+  quickFilter = 'all';
   searchTerm = '';
   visibleLimit = PAGE_SIZE;
   byId('wae-search-input').value = '';
-
-  const savedCount = extractedContacts.filter(c => c.isMyContact).length;
   byId('wae-results-title').textContent = title || 'Contactos';
-  byId('wae-results-count').textContent = `${extractedContacts.length} ${extractedContacts.length === 1 ? 'contacto' : 'contactos'}`;
-  byId('wae-stat-saved').textContent = savedCount;
-  byId('wae-stat-unsaved').textContent = extractedContacts.length - savedCount;
-  byId('wae-stat-admin').textContent = extractedContacts.filter(c => c.isAdmin).length;
+  closePopovers(false);
+  renderSummary();
 
   dispatch({ type: 'RESULTS', title, contacts: extractedContacts });
   renderTable();
   byId('wae-btn-back').focus();
+}
+
+const SUMMARY_LABELS = {
+  all: ['contacto', 'contactos'],
+  saved: ['en agenda', 'en agenda'],
+  unsaved: ['sin guardar', 'sin guardar'],
+  admins: ['admin', 'admins']
+};
+
+/**
+ * Summary line: each count is a filter that also selects exactly those contacts
+ */
+function renderSummary() {
+  const counts = summarize(extractedContacts);
+  const container = byId('wae-summary');
+  container.innerHTML = Object.entries(SUMMARY_LABELS)
+    .filter(([key]) => key === 'all' || counts[key] > 0)
+    .map(([key, [one, many]]) => `
+      <button type="button" class="wae-summary-btn" data-quick-filter="${key}" aria-pressed="${key === quickFilter}">
+        <strong>${counts[key]}</strong> ${counts[key] === 1 ? one : many}
+      </button>
+    `).join('');
+}
+
+function applyQuickFilter(filter) {
+  quickFilter = quickFilter === filter ? 'all' : filter;
+  selectedContactIds = new Set(quickFilterContacts(extractedContacts, quickFilter).map(contactKey));
+  visibleLimit = PAGE_SIZE;
+  renderSummary();
+  renderTable();
+}
+
+/**
+ * Popovers (columns, more formats): one open at a time, closed by Esc or an outside click
+ */
+function togglePopover(trigger) {
+  const popover = byId(trigger.getAttribute('aria-controls'));
+  const willOpen = popover.hidden;
+  closePopovers(false);
+  if (!willOpen) return;
+  popover.hidden = false;
+  trigger.setAttribute('aria-expanded', 'true');
+  const first = popover.querySelector('button, input');
+  if (first) first.focus();
+}
+
+/** Closes any open popover; returns true when one was open. */
+function closePopovers(returnFocus) {
+  let closed = false;
+  shadow.querySelectorAll('[aria-expanded="true"][aria-controls]').forEach(trigger => {
+    byId(trigger.getAttribute('aria-controls')).hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+    if (returnFocus) trigger.focus();
+    closed = true;
+  });
+  return closed;
 }
 
 function renderFieldCheckboxes() {
@@ -850,7 +935,8 @@ function renderTable() {
   const activeFields = getActiveOrderedFields();
 
   // 1. Filter data; select-all acts on every contact matching the search
-  const filtered = filterContacts(extractedContacts, searchTerm);
+  const base = quickFilterContacts(extractedContacts, quickFilter);
+  const filtered = filterContacts(base, searchTerm);
   const { rows, hiddenCount } = paginate(filtered, visibleLimit);
 
   // 2. Render Dynamic <thead> based on active fields
@@ -873,13 +959,13 @@ function renderTable() {
     });
   }
 
-  statsText.textContent = rows.length < extractedContacts.length ? `${rows.length} de ${extractedContacts.length}` : '';
+  statsText.textContent = rows.length < base.length ? `${rows.length} de ${base.length}` : '';
   selectionCount.textContent = `${selectedContactIds.size} seleccionados`;
 
   const totalCols = activeFields.length + 2;
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="${totalCols}" class="wae-empty">No hay contactos que coincidan con la búsqueda.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${totalCols}" class="wae-empty">${extractedContacts.length === 0 ? 'No encontramos contactos con número en este origen.' : 'Ningún contacto coincide con la búsqueda.'}</td></tr>`;
     return;
   }
 

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { initialViewState, reduceView, visibleTabs, memberCountLabel, friendlyError } from '../src/ui/view-state.js';
+import { initialViewState, reduceView, visibleTabs, memberCountLabel, friendlyError, summarize, quickFilterContacts } from '../src/ui/view-state.js';
 
 const contacts = [{ cleanPhone: '573001234567' }, { cleanPhone: '34600112233' }];
 
@@ -79,4 +79,26 @@ test('View state: engine errors become short instructions', () => {
   );
   assert.equal(friendlyError('Algo raro'), 'Algo raro');
   assert.equal(friendlyError(''), 'No se pudo leer WhatsApp Web. Vuelve a intentarlo.');
+});
+
+const mixed = [
+  { cleanPhone: '1', isMyContact: true, isAdmin: true },
+  { cleanPhone: '2', isMyContact: true, isAdmin: false },
+  { cleanPhone: '3', isMyContact: false, isAdmin: false },
+  { cleanPhone: '4', isMyContact: false, isAdmin: true },
+  { cleanPhone: '5', isMyContact: false, isAdmin: false }
+];
+
+test('Results summary: counts contacts, saved, unsaved and admins', () => {
+  assert.deepEqual(summarize(mixed), { all: 5, saved: 2, unsaved: 3, admins: 2 });
+  assert.deepEqual(summarize([]), { all: 0, saved: 0, unsaved: 0, admins: 0 });
+});
+
+test('Results summary: each count filters to exactly those contacts', () => {
+  const phones = list => list.map(c => c.cleanPhone);
+  assert.deepEqual(phones(quickFilterContacts(mixed, 'all')), ['1', '2', '3', '4', '5']);
+  assert.deepEqual(phones(quickFilterContacts(mixed, 'saved')), ['1', '2']);
+  assert.deepEqual(phones(quickFilterContacts(mixed, 'unsaved')), ['3', '4', '5']);
+  assert.deepEqual(phones(quickFilterContacts(mixed, 'admins')), ['1', '4']);
+  assert.deepEqual(phones(quickFilterContacts(mixed, 'unknown')), ['1', '2', '3', '4', '5']);
 });

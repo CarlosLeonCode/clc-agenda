@@ -630,46 +630,6 @@
   flex-direction: column;
 }
 
-.wae-stats-ribbon {
-  display: flex;
-  gap: 16px;
-  padding: 12px 16px 0;
-}
-
-.wae-stat-card {
-  display: flex;
-  gap: 6px;
-  color: var(--wae-text-muted);
-  font-size: 13px;
-}
-
-.wae-stat-card-value {
-  order: -1;
-  color: var(--wae-text);
-  font-weight: 600;
-}
-
-.wae-fields-section {
-  margin: 12px 16px 0;
-  padding: 10px 12px;
-  border: 1px solid var(--wae-border);
-  border-radius: var(--wae-radius);
-}
-
-.wae-fields-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.wae-fields-title {
-  color: var(--wae-text-secondary);
-  font-size: 13px;
-  font-weight: 500;
-}
-
 .wae-fields-presets {
   display: flex;
   flex-wrap: wrap;
@@ -694,16 +654,19 @@
 }
 
 .wae-fields-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  margin-top: 8px;
+  display: grid;
+  gap: 2px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--wae-border);
 }
 
 .wae-field-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  padding: 5px 4px;
+  border-radius: var(--wae-radius-sm);
   color: var(--wae-text-secondary);
   font-size: 13px;
   cursor: pointer;
@@ -715,7 +678,112 @@
   height: 15px;
   margin: 0;
   accent-color: var(--wae-accent);
+  vertical-align: middle;
   cursor: pointer;
+}
+
+.wae-field-item:hover {
+  background: var(--wae-bg-hover);
+  color: var(--wae-text);
+}
+
+.wae-muted {
+  color: var(--wae-text-muted);
+}
+
+/* Summary counts double as filters */
+.wae-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 16px 0;
+}
+
+.wae-summary-btn {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--wae-border-strong);
+  border-radius: var(--wae-radius-full);
+  background: transparent;
+  color: var(--wae-text-secondary);
+  font: 400 13px/1 var(--wae-font);
+  cursor: pointer;
+}
+
+.wae-summary-btn strong {
+  color: var(--wae-text);
+  font-weight: 600;
+}
+
+.wae-summary-btn:hover {
+  background: var(--wae-bg-hover);
+}
+
+.wae-summary-btn[aria-pressed="true"] {
+  background: var(--wae-bg-hover);
+  border-color: var(--wae-text-muted);
+  color: var(--wae-text);
+}
+
+/* Popovers: columns picker and more formats menu */
+.wae-popover-anchor {
+  position: relative;
+}
+
+.wae-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 5;
+  width: 300px;
+  padding: 10px;
+  border: 1px solid var(--wae-border-strong);
+  border-radius: var(--wae-radius-lg);
+  background: var(--wae-bg-raised);
+  box-shadow: var(--wae-shadow);
+}
+
+.wae-menu {
+  top: auto;
+  bottom: calc(100% + 6px);
+  right: auto;
+  left: 0;
+  width: 280px;
+  padding: 6px;
+}
+
+.wae-menu-item {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--wae-radius);
+  background: transparent;
+  color: var(--wae-text);
+  font: 500 13px/1.3 var(--wae-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.wae-menu-item:hover {
+  background: var(--wae-bg-hover);
+}
+
+.wae-menu-item:focus-visible {
+  outline-offset: -2px;
+}
+
+.wae-menu-desc {
+  color: var(--wae-text-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.wae-export-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .wae-stats-badge {
@@ -823,12 +891,6 @@
   white-space: nowrap;
 }
 
-.wae-export-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-}
 
 /* -------------------------------------------------------------
    Toast
@@ -866,11 +928,7 @@
     align-items: stretch;
   }
 
-  .wae-export-grid {
-    justify-content: stretch;
-  }
-
-  .wae-export-grid .wae-btn {
+  .wae-export-actions .wae-btn {
     flex: 1;
   }
 }

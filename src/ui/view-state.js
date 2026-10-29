@@ -52,3 +52,24 @@ export function friendlyError(message) {
   if (text.includes('Tiempo de espera')) return 'WhatsApp Web tardó demasiado en responder. Vuelve a intentarlo.';
   return text;
 }
+
+const QUICK_FILTERS = {
+  saved: c => c.isMyContact,
+  unsaved: c => !c.isMyContact,
+  admins: c => c.isAdmin
+};
+
+export function summarize(contacts) {
+  return {
+    all: contacts.length,
+    saved: contacts.filter(QUICK_FILTERS.saved).length,
+    unsaved: contacts.filter(QUICK_FILTERS.unsaved).length,
+    admins: contacts.filter(QUICK_FILTERS.admins).length
+  };
+}
+
+/** Contacts behind one of the summary counts; unknown filters mean all contacts. */
+export function quickFilterContacts(contacts, filter) {
+  const predicate = QUICK_FILTERS[filter];
+  return predicate ? contacts.filter(predicate) : contacts;
+}
