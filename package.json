@@ -1,6 +1,7 @@
 {
-  "name": "wa-contact-extractor-pro",
-  "version": "1.0.0",
+  "name": "clc-agenda",
+  "version": "1.3.0",
+  "private": true,
   "description": "CLC Agenda: export WhatsApp Web contacts to Google Contacts, a phone address book, CSV, or JSON.",
   "type": "module",
   "scripts": {

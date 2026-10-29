@@ -28,7 +28,7 @@ No se envían a ningún servidor. Se quedan en tu computadora.
 
 ## Para quien quiere el detalle
 
-Extensión de navegador, Manifest V3. Funciona en Chrome, Brave, Edge, Opera y Firefox. Corre solo en `https://web.whatsapp.com`. Sin permisos extra: solo accede a WhatsApp Web. Cero peticiones externas y cero telemetría.
+Extensión de navegador, Manifest V3. Funciona en navegadores basados en Chromium, versión 111 o superior: Chrome, Brave, Edge y Opera. Corre solo en `https://web.whatsapp.com`. Sin permisos extra: solo accede a WhatsApp Web. Cero peticiones externas y cero telemetría.
 
 Instalación local:
 

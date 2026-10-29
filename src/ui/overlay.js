@@ -720,7 +720,7 @@ async function loadOverview() {
   try {
     overviewData = await sendPageRequest('GET_OVERVIEW');
   } catch (err) {
-    console.warn('[WA Extractor] Load overview warning:', err);
+    console.warn('[CLC Agenda] Load overview warning:', err);
     overviewFailed = true;
   }
   renderGroups();

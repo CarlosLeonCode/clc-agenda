@@ -16,7 +16,7 @@ import {
 function start() {
   window.__WA_EXTRACTOR_INITIALIZED__ = true;
 
-  console.log('[WA Extractor Pro] Engine v2.7 (Archived Support & Deep Webpack Hook) initialized.');
+  console.log('[CLC Agenda] Engine initialized.');
 
   // Attempt Webpack hook immediately
   initWebpackStore();
@@ -66,7 +66,7 @@ function start() {
         data: responseData
       }, window.location.origin);
     } catch (err) {
-      console.error('[WA Extractor] Request error:', err);
+      console.error('[CLC Agenda] Request error:', err);
       window.postMessage({
         type: 'WA_EXTRACTOR_RESPONSE',
         requestId,

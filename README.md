@@ -28,7 +28,7 @@ Nothing is sent to a server. It stays on your computer.
 
 ## For the technical details
 
-Browser extension, Manifest V3. Works on Chrome, Brave, Edge, Opera, and Firefox. Runs only on `https://web.whatsapp.com`. No extra permissions: only access to WhatsApp Web. No external requests and no telemetry.
+Browser extension, Manifest V3. Works on Chromium browsers version 111 or newer: Chrome, Brave, Edge, and Opera. Runs only on `https://web.whatsapp.com`. No extra permissions: only access to WhatsApp Web. No external requests and no telemetry.
 
 Local install:
 

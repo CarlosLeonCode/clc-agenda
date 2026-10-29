@@ -3,7 +3,7 @@
  * The page engine (dist/inject.js) is loaded by the manifest in the MAIN world.
  */
 
-console.log('[WA Extractor Pro] Content script active on WhatsApp Web.');
+console.log('[CLC Agenda] Content script active on WhatsApp Web.');
 
 function waitForWhatsApp() {
   const checkInterval = setInterval(() => {

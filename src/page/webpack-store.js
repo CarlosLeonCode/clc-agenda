@@ -56,6 +56,6 @@ export function initWebpackStore() {
       ]);
     }
   } catch (err) {
-    console.warn('[WA Extractor] Webpack hook warning:', err);
+    console.warn('[CLC Agenda] Webpack hook warning:', err);
   }
 }

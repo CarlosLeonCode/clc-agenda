@@ -170,12 +170,12 @@ export async function scanAllIndexedDB(force = false, onProgress = () => {}) {
 
         db.close();
       } catch (dbErr) {
-        console.warn('[WA Extractor] DB inspect warning:', dbInfo.name, dbErr);
+        console.warn('[CLC Agenda] DB inspect warning:', dbInfo.name, dbErr);
       }
       onProgress();
     }
   } catch (e) {
-    console.error('[WA Extractor] Error scanning IndexedDB:', e);
+    console.error('[CLC Agenda] Error scanning IndexedDB:', e);
   }
 
   try {
@@ -211,12 +211,12 @@ export async function collectGroupAuthors(groupId, onProgress = () => {}) {
         }
         db.close();
       } catch (dbErr) {
-        console.warn('[WA Extractor] DB inspect warning:', dbInfo.name, dbErr);
+        console.warn('[CLC Agenda] DB inspect warning:', dbInfo.name, dbErr);
       }
       onProgress();
     }
   } catch (e) {
-    console.error('[WA Extractor] Error reading group messages:', e);
+    console.error('[CLC Agenda] Error reading group messages:', e);
   }
   return authors;
 }

@@ -1,5 +1,5 @@
 /**
- * WA Contact Extractor Pro - Popup Controller
+ * CLC Agenda - Popup Controller
  */
 
 document.addEventListener('DOMContentLoaded', async () => {

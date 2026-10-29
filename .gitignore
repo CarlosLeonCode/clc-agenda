@@ -18,7 +18,8 @@ Thumbs.db
 .codex/
 .cursor/
 .cursorrules
-.github/
+.github/*
+!.github/workflows/
 .husky/
 .vscode/
 
