@@ -1,6 +1,7 @@
 import React from 'react';
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import { COLORS, FONT, SPRING } from './theme.js';
+import { markSVG } from '../../src/ui/brand.js';
 
 /** 0 -> 1 spring that starts at `delay` frames. */
 export function useReveal(delay = 0, durationInFrames) {
@@ -58,22 +59,14 @@ export const headline = {
   lineHeight: 1.04
 };
 
-/** Original chat-bubble outline mark (not a third-party logo). */
-export function LogoMark({ size = 120, progress = 1, color = COLORS.accent }) {
-  const length = 92;
+/** CLC Agenda "Fuga" mark, shared with the extension and the landing (src/ui/brand.js). */
+export function LogoMark({ size = 120, progress = 1 }) {
+  const svg = markSVG({ tile: true }).replace('<svg', `<svg width="${size}" height="${size}"`);
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-      <rect x="2" y="2" width="44" height="44" rx="12" fill={COLORS.ink} opacity={Math.min(1, progress * 1.4)} />
-      <path
-        d="M24 11c-7.5 0-13 5.2-13 11.6 0 3.3 1.5 6.2 3.9 8.3L13.5 37l6.6-2.6c1.2.3 2.5.5 3.9.5 7.5 0 13-5.2 13-11.6S31.5 11 24 11z"
-        stroke={color}
-        strokeWidth="2.6"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-        strokeDasharray={length}
-        strokeDashoffset={length * (1 - progress)}
-      />
-    </svg>
+    <div
+      style={{ width: size, height: size, opacity: Math.min(1, progress * 1.4), transform: `scale(${0.9 + 0.1 * progress})` }}
+      dangerouslySetInnerHTML={{ __html: svg }}
+    />
   );
 }
 
