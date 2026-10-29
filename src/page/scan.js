@@ -1,6 +1,7 @@
 import { cleanPhoneNumber, isLid } from '../core/phone.js';
 import { extractParticipantsList } from '../core/groups.js';
 import { mergeContactRecord } from '../core/contact-record.js';
+import { addToSuffixIndex } from '../core/suffix-match.js';
 import { initWebpackStore } from './webpack-store.js';
 import { openDatabase, getAllFromStore } from './indexeddb.js';
 
@@ -53,12 +54,7 @@ export async function scanAllIndexedDB(force = false) {
       }
       mergeContactRecord(entry, raw);
 
-      if (phone.length >= 9) {
-        const suffix10 = phone.slice(-10);
-        const suffix9 = phone.slice(-9);
-        if (!result.contactsBySuffix.has(suffix10)) result.contactsBySuffix.set(suffix10, entry);
-        if (!result.contactsBySuffix.has(suffix9)) result.contactsBySuffix.set(suffix9, entry);
-      }
+      addToSuffixIndex(result.contactsBySuffix, entry);
     }
   }
 

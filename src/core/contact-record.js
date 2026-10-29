@@ -14,7 +14,7 @@ export function mergeContactRecord(target, source) {
   }
 
   const savedName = sanitizeName(
-    raw.name || raw.displayName || raw.formattedName || raw.shortName || (raw.contact ? raw.contact.name || raw.contact.displayName : null),
+    raw.name || raw.displayName || raw.formattedName || raw.shortName || raw.savedName || (raw.contact ? raw.contact.name || raw.contact.displayName : null),
     target.phone || phone
   );
   if (savedName && !target.savedName) {

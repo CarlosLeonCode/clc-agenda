@@ -55,3 +55,11 @@ test('Contact record: returns the target untouched for an empty source', () => {
   assert.equal(mergeContactRecord(entry, null), entry);
   assert.deepEqual(entry, emptyEntry());
 });
+
+test('Contact record: carries names from an aggregated contactsByPhone entry', () => {
+  const aggregated = { phone: '3195042258', savedName: 'Andres Gomez', pushName: 'Andy', isMyContact: true, isBusiness: false, isArchived: false };
+  const entry = mergeContactRecord({ ...emptyEntry(), phone: '573195042258' }, aggregated);
+  assert.equal(entry.savedName, 'Andres Gomez');
+  assert.equal(entry.pushName, 'Andy');
+  assert.equal(entry.phone, '573195042258');
+});

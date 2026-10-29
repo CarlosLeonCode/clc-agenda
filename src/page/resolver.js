@@ -1,5 +1,6 @@
 import { cleanPhoneNumber, isLid, detectCountry } from '../core/phone.js';
 import { mergeContactRecord } from '../core/contact-record.js';
+import { findSuffixMatch } from '../core/suffix-match.js';
 
 /**
  * Resolves contact with exact match, suffix match, and live Store hydration
@@ -42,15 +43,10 @@ export async function buildResolvedContact(initialData, dataBundle, extra = {}) 
     mergeContactRecord(aggregated, dataBundle.contactsByPhone.get(phone));
   }
 
-  // 3. Suffix match
+  // 3. Suffix match: same number stored in national format
   if ((!aggregated.savedName && !aggregated.pushName) && dataBundle?.contactsBySuffix) {
-    const suffix10 = phone.slice(-10);
-    const suffix9 = phone.slice(-9);
-    if (dataBundle.contactsBySuffix.has(suffix10)) {
-      mergeContactRecord(aggregated, dataBundle.contactsBySuffix.get(suffix10));
-    } else if (dataBundle.contactsBySuffix.has(suffix9)) {
-      mergeContactRecord(aggregated, dataBundle.contactsBySuffix.get(suffix9));
-    }
+    const localMatch = findSuffixMatch(dataBundle.contactsBySuffix, phone);
+    if (localMatch) mergeContactRecord(aggregated, localMatch);
   }
 
   // 4. Multi-device keys in contactsById
