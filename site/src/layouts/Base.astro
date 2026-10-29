@@ -2,7 +2,7 @@
 import '@fontsource/bricolage-grotesque/latin-800.css';
 import '../styles/fonts.css';
 import '../styles/global.css';
-import { TITLE, DESCRIPTION, REPO, FAQ } from '../data/site.js';
+import { TITLE, DESCRIPTION, REPO, FAQ, AUTHOR } from '../data/site.js';
 // Same files the @font-face rules use: preloading them means the hero paints with
 // the real fonts instead of swapping (and re-wrapping the headline) mid-intro
 import displayFont from '@fontsource/bricolage-grotesque/files/bricolage-grotesque-latin-800-normal.woff2?url';
@@ -23,6 +23,7 @@ const jsonLd = {
       operatingSystem: 'Chrome, Brave, Edge, Opera (Chromium 111+)',
       url: pageUrl,
       codeRepository: REPO,
+      author: { '@type': 'Person', name: AUTHOR.name, url: AUTHOR.url },
       license: 'https://opensource.org/licenses/MIT',
       inLanguage: 'es'
     },

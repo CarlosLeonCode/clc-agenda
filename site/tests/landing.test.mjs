@@ -11,6 +11,7 @@ const html = fs.readFileSync(new URL('index.html', dist), 'utf8');
 // Netlify sets URL during builds; local builds fall back to the dev server
 const SITE = (process.env.URL || 'http://localhost:4321').replace(/\/$/, '');
 const REPO = 'https://github.com/CarlosLeonCode/clc-agenda';
+const AUTHOR_URL = 'https://www.carlosleoncode.com';
 
 function listFiles(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
@@ -59,18 +60,17 @@ test('Landing: landmarks and exactly one h1', () => {
   }
 });
 
-test('Landing: every image has alt text, width and height', () => {
-  const imgs = html.match(/<img[^>]*>/g) || [];
-  assert.ok(imgs.length >= 1, 'the product shot is rendered');
-  for (const img of imgs) {
-    assert.match(img, /\salt="/, `alt missing: ${img}`);
-    assert.match(img, /\swidth="\d+"/, `width missing: ${img}`);
-    assert.match(img, /\sheight="\d+"/, `height missing: ${img}`);
+test('Landing: every image and video has a text alternative, width and height', () => {
+  const media = [...(html.match(/<img[^>]*>/g) || []), ...(html.match(/<video[^>]*>/g) || [])];
+  assert.ok(media.length >= 1, 'the product is shown');
+  for (const el of media) {
+    assert.match(el, /\s(alt|aria-label)="/, `text alternative missing: ${el}`);
+    assert.match(el, /\swidth="\d+"/, `width missing: ${el}`);
+    assert.match(el, /\sheight="\d+"/, `height missing: ${el}`);
   }
-  assert.ok(imgs.some(img => /alt="[^"]{20,}"/.test(img)), 'the product shot has a descriptive alt');
 });
 
-test('Landing: no third-party resources; external links only to GitHub', () => {
+test('Landing: no third-party resources; external links only to GitHub and the author', () => {
   const resources = [...html.matchAll(/<(?:script|img|source|link|iframe|video)[^>]*(?:src|href|srcset)="([^"]+)"/g)].map(m => m[1]);
   for (const url of resources) {
     const isCanonical = url === `${SITE}/`;
@@ -80,7 +80,7 @@ test('Landing: no third-party resources; external links only to GitHub', () => {
   assert.doesNotMatch(css, /@import\s+url\(\s*['"]?https?:/);
   const anchors = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(m => m[1]);
   for (const href of anchors.filter(h => /^https?:/.test(h))) {
-    assert.ok(href.startsWith(REPO), `external link outside GitHub: ${href}`);
+    assert.ok(href.startsWith(REPO) || href.startsWith(AUTHOR_URL), `unexpected external link: ${href}`);
   }
 });
 
@@ -123,7 +123,7 @@ test('Landing: copy uses neutral Spanish and makes no unverified claims', () => 
 });
 
 test('Landing: page weight stays under 600 KB', () => {
-  const total = distFiles.filter(f => !f.endsWith('og.png')).reduce((sum, f) => sum + fs.statSync(f).size, 0);
+  const total = distFiles.filter(f => !f.endsWith('og.png') && !/\/video\//.test(f)).reduce((sum, f) => sum + fs.statSync(f).size, 0);
   assert.ok(total < 600 * 1024, `dist weighs ${(total / 1024).toFixed(0)} KB`);
 });
 
@@ -177,4 +177,51 @@ test('perf: every infinite animation is paused while offscreen', () => {
 test('brand: the nav uses the Fuga mark, not the old four dots', () => {
   assert.match(html, /class="brand-mark"/);
   assert.doesNotMatch(html, /logo-dots/);
+});
+
+test('hero video: muted inline loop with poster, started by JS only when allowed', () => {
+  const video = html.match(/<video[^>]*>/)?.[0];
+  assert.ok(video, 'the hero renders a <video>');
+  for (const attr of ['muted', 'loop', 'playsinline', 'controls']) assert.match(video, new RegExp(`\\b${attr}\\b`), `video has ${attr}`);
+  assert.doesNotMatch(video, /\bautoplay\b/, 'no autoplay attribute: JS decides, so reduced motion is respected');
+  assert.match(video, /preload="metadata"/);
+  assert.match(video, /poster="[^"]+"/);
+  assert.match(video, /aria-label="[^"]{30,}"/, 'the silent video is described');
+  assert.match(html, /<source[^>]*type="video\/webm"/);
+  assert.match(html, /<source[^>]*type="video\/mp4"/);
+});
+
+test('hero video: a pause control exists for motion longer than 5 s', () => {
+  assert.match(html, /<button[^>]*data-video-toggle[^>]*aria-pressed="false"[^>]*hidden/);
+  const script = fs.readFileSync(new URL('src/scripts/hero-video.js', root), 'utf8');
+  assert.match(script, /prefers-reduced-motion/);
+  assert.match(script, /IntersectionObserver/);
+  assert.match(script, /removeAttribute\('controls'\)/);
+});
+
+test('hero video: files are web-sized', () => {
+  for (const ext of ['mp4', 'webm']) {
+    const file = distFiles.find(f => f.endsWith(`clc-agenda.${ext}`));
+    assert.ok(file, `dist has clc-agenda.${ext}`);
+    assert.ok(fs.statSync(file).size < 2.5 * 1024 * 1024, `${ext} under 2.5 MB`);
+  }
+});
+
+test('hero video: icons swap through the hidden attribute (SVG elements have no .hidden property)', () => {
+  const script = fs.readFileSync(new URL('src/scripts/hero-video.js', root), 'utf8');
+  assert.match(script, /pauseIcon\.toggleAttribute\('hidden'/);
+  assert.match(script, /playIcon\.toggleAttribute\('hidden'/);
+  assert.doesNotMatch(script, /Icon\.hidden\s*=/);
+});
+
+test('hero: credits carlosleoncode with a link to his site', () => {
+  const hero = html.match(/<section class="hero"[\s\S]*?<\/section>/)?.[0] || '';
+  assert.match(hero, new RegExp(`<a[^>]*href="${AUTHOR_URL}/?"[^>]*>[\\s\\S]*?carlosleoncode[\\s\\S]*?</a>`), 'the whole credit pill links the author');
+  assert.match(hero, /Creado por/);
+});
+
+test('structured data: the app names carlosleoncode as its author', () => {
+  const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => JSON.parse(m[1]));
+  const app = blocks.flatMap(b => b['@graph'] || [b]).find(n => n['@type'] === 'SoftwareApplication');
+  assert.deepEqual(app.author, { '@type': 'Person', name: 'carlosleoncode', url: `${AUTHOR_URL}/` });
 });

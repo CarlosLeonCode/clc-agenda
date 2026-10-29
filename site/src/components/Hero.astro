@@ -1,7 +1,11 @@
 ---
-import { Image } from 'astro:assets';
-import shot from '../assets/results-unsaved.png';
-import { INSTALL_URL } from '../data/site.js';
+import { getImage } from 'astro:assets';
+import posterSrc from '../assets/hero-poster.png';
+import { INSTALL_URL, AUTHOR } from '../data/site.js';
+
+// Promo video (video/ project), re-encoded at 720p without audio for the web
+const poster = await getImage({ src: posterSrc, width: 1280, format: 'webp', quality: 80 });
+const videoBase = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/video/clc-agenda`;
 
 // Named cursors: people from your groups, drifting toward your address book
 const cursors = [
@@ -27,6 +31,14 @@ const cursors = [
       <a class="btn" href={INSTALL_URL}>Instalar la extensión</a>
       <a class="btn btn-alt" href="#como-funciona">Ver cómo funciona</a>
     </div>
+    <p class="credit-row" data-fade>
+      <a class="credit" href={AUTHOR.url}>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 2l7 19 2.5-8L21 10z" fill="var(--coral)" stroke="#fff" stroke-width="1.5" /></svg>
+        <span class="credit-by">Creado por</span>
+        <span class="credit-name">{AUTHOR.name}</span>
+        <svg class="credit-arrow" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </a>
+    </p>
   </div>
 
   <div class="wrap">
@@ -35,15 +47,26 @@ const cursors = [
       <div class="shape shape-sky" aria-hidden="true" data-shape></div>
       <div class="shape shape-green" aria-hidden="true" data-shape></div>
       <div class="shot" data-shot>
-        <Image
-          src={shot}
-          alt="Ventana de CLC Agenda sobre WhatsApp Web con el grupo Equipo Ventas LATAM filtrado en 426 contactos sin guardar y los botones para exportar a Google Contacts o al celular."
-          width={760}
-          format="webp"
-          quality={82}
-          loading="eager"
-          fetchpriority="high"
-        />
+        <video
+          data-video
+          muted
+          loop
+          playsinline
+          controls
+          preload="metadata"
+          poster={poster.src}
+          width="1280"
+          height="720"
+          aria-label="Video de 45 segundos sin audio: CLC Agenda saca los contactos de un grupo de WhatsApp Web, filtra a los que no tienes guardados y los exporta a Google Contacts o al celular."
+        >
+          <source src={`${videoBase}.mp4`} type="video/mp4" />
+          <source src={`${videoBase}.webm`} type="video/webm" />
+        </video>
+        <button type="button" class="video-toggle" data-video-toggle aria-pressed="false" hidden>
+          <svg data-icon="pause" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 5h3v14H7zM14 5h3v14h-3z" fill="currentColor" /></svg>
+          <svg data-icon="play" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" hidden><path d="M8 5l11 7-11 7z" fill="currentColor" /></svg>
+          <span class="video-toggle-label" data-video-label>Pausar video</span>
+        </button>
         <span class="click-ripple" aria-hidden="true" data-ripple></span>
       </div>
       <div class="chip chip-1" aria-hidden="true" data-chip>+57 300 000 0000</div>
