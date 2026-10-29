@@ -1,10 +1,10 @@
 /**
  * CLC Agenda - Floating UI Overlay Manager
  * Renders inside a Shadow DOM root so WhatsApp's CSS and ours never collide.
+ * Two views, never both: choose a source, then review and save the contacts.
  */
 
 import styles from './overlay.css';
-
 import { FIELD_DEFINITIONS } from '../core/fields.js';
 import { exportToCSV } from '../exporters/csv.js';
 import { exportToVCard } from '../exporters/vcard.js';
@@ -12,21 +12,34 @@ import { exportToGoogleContactsCSV } from '../exporters/google-contacts.js';
 import { exportToJSON } from '../exporters/json.js';
 import { clampLauncherPosition } from './launcher-position.js';
 import { nextTabIndex, nextFocusIndex } from './a11y.js';
+import { initialViewState, reduceView, visibleTabs, memberCountLabel, friendlyError } from './view-state.js';
 import { PAGE_SIZE, contactKey, filterContacts, getExportList, setSelectionFor, areAllSelected, paginate } from './selection.js';
 
 let host = null;
 let shadow = null;
 let lastFocused = null;
+let view = initialViewState();
 let overviewData = null;
-let activeTab = 'groups';
-let currentFilter = 'all';
-let currentChatFilter = 'all';
-let currentGroupFilter = 'all';
+let overviewFailed = false;
+let groupArchivedOnly = false;
+let groupSearchTerm = '';
+let lastRequestKey = null;
+const paneScroll = {};
 let extractedContacts = [];
 let selectedContactIds = new Set();
 let searchTerm = '';
 let visibleLimit = PAGE_SIZE;
-let groupSearchTerm = '';
+
+const ICONS = {
+  chevron: '<svg class="wae-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>',
+  back: '<svg class="wae-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>',
+  search: '<svg class="wae-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
+  close: '<svg class="wae-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+  copy: '<svg class="wae-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>',
+  logo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12c0 1.82.49 3.53 1.34 5.01L2 22l5.12-1.33C8.57 21.49 10.24 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.53 0-2.98-.44-4.22-1.19l-.3-.18-3.04.79.81-2.96-.2-.31C4.34 14.93 3.89 13.51 3.89 12 3.89 7.53 7.53 3.89 12 3.89s8.11 3.64 8.11 8.11-3.64 8.11-8.11 8.11z"/></svg>'
+};
+
+const TAB_LABELS = { groups: 'Grupos', labels: 'Etiquetas', all: 'Contactos', chats: 'Chats' };
 
 // Dynamic table cell renderers per field
 const CELL_RENDERERS = {
@@ -273,8 +286,10 @@ function openModal() {
   modal.classList.add('wae-active');
   backdrop.classList.add('wae-active');
   modal.inert = false;
-  const activeTabBtn = modal.querySelector('[role="tab"][aria-selected="true"]');
-  if (activeTabBtn) activeTabBtn.focus();
+  const focusTarget = view.view === 'results'
+    ? byId('wae-btn-back')
+    : modal.querySelector('[role="tab"][aria-selected="true"]');
+  if (focusTarget) focusTarget.focus();
   loadOverview();
   return true;
 }
@@ -373,215 +388,376 @@ function initUI() {
   modal.setAttribute('aria-labelledby', 'wae-title');
   modal.inert = true;
   modal.innerHTML = `
-    <div class="wae-header">
-      <div class="wae-header-title">
-        <div class="wae-header-logo-badge" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12c0 1.82.49 3.53 1.34 5.01L2 22l5.12-1.33C8.57 21.49 10.24 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.53 0-2.98-.44-4.22-1.19l-.3-.18-3.04.79.81-2.96-.2-.31C4.34 14.93 3.89 13.51 3.89 12 3.89 7.53 7.53 3.89 12 3.89s8.11 3.64 8.11 8.11-3.64 8.11-8.11 8.11z"/>
-          </svg>
+    <header class="wae-header">
+      <h2 class="wae-title" id="wae-title"><span class="wae-logo">${ICONS.logo}</span>CLC Agenda</h2>
+      <button type="button" class="wae-icon-btn" id="wae-btn-close" aria-label="Cerrar" title="Cerrar">${ICONS.close}</button>
+    </header>
+
+    <div class="wae-view" id="wae-view-source">
+      <div class="wae-tabs" role="tablist" aria-label="Origen de los contactos">
+        ${Object.entries(TAB_LABELS).map(([tab, label]) => `
+          <button type="button" class="wae-tab" role="tab" id="wae-tabbtn-${tab}" data-tab="${tab}" aria-controls="wae-tab-${tab}" aria-selected="false" tabindex="-1">${label}</button>
+        `).join('')}
+      </div>
+
+      <div class="wae-alert" id="wae-error" role="alert" hidden></div>
+
+      <section class="wae-pane" id="wae-tab-groups" role="tabpanel" aria-labelledby="wae-tabbtn-groups">
+        <div class="wae-toolbar">
+          <label class="wae-search">
+            ${ICONS.search}
+            <input type="search" id="wae-group-search-input" placeholder="Buscar grupo" aria-label="Buscar grupo" autocomplete="off">
+          </label>
+          <button type="button" class="wae-toggle" id="wae-btn-archived" aria-pressed="false">Archivados</button>
         </div>
-        <h2 id="wae-title">CLC Agenda</h2>
-        <span class="wae-header-badge">v2.7</span>
-      </div>
-      <div class="wae-header-actions">
-        <button type="button" class="wae-close-btn" id="wae-btn-close" aria-label="Cerrar" title="Cerrar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
+        <ul class="wae-list" id="wae-groups-container" aria-label="Grupos"></ul>
+      </section>
+
+      <section class="wae-pane" id="wae-tab-labels" role="tabpanel" aria-labelledby="wae-tabbtn-labels">
+        <ul class="wae-list" id="wae-labels-container" aria-label="Etiquetas"></ul>
+      </section>
+
+      <section class="wae-pane wae-pane-form" id="wae-tab-all" role="tabpanel" aria-labelledby="wae-tabbtn-all">
+        <p class="wae-hint">Todos los contactos que WhatsApp Web tiene en este navegador.</p>
+        <label class="wae-field" for="wae-all-filter">Mostrar</label>
+        <select class="wae-select" id="wae-all-filter">
+          <option value="all">Todos los contactos</option>
+          <option value="unsaved">Solo sin guardar</option>
+          <option value="saved">Solo en agenda</option>
+          <option value="archived">Solo de chats archivados</option>
+          <option value="business">Solo cuentas de empresa</option>
+        </select>
+        <button type="button" class="wae-btn wae-btn-primary" id="wae-btn-extract-all" data-request="all">Ver contactos</button>
+      </section>
+
+      <section class="wae-pane wae-pane-form" id="wae-tab-chats" role="tabpanel" aria-labelledby="wae-tabbtn-chats">
+        <p class="wae-hint">Las personas con las que tienes chats individuales.</p>
+        <label class="wae-field" for="wae-chat-filter">Mostrar</label>
+        <select class="wae-select" id="wae-chat-filter">
+          <option value="all">Todos los chats</option>
+          <option value="active">Solo chats activos</option>
+          <option value="archived">Solo chats archivados</option>
+        </select>
+        <button type="button" class="wae-btn wae-btn-primary" id="wae-btn-extract-chats" data-request="chats">Ver contactos</button>
+      </section>
     </div>
 
-    <div class="wae-tabs" role="tablist" aria-label="Origen de los contactos">
-      <button type="button" class="wae-tab-btn wae-active" data-tab="groups" role="tab" id="wae-tabbtn-groups" aria-controls="wae-tab-groups" aria-selected="true" tabindex="0">
-        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-        <span>Grupos</span>
-      </button>
-      <button type="button" class="wae-tab-btn" data-tab="labels" role="tab" id="wae-tabbtn-labels" aria-controls="wae-tab-labels" aria-selected="false" tabindex="-1">
-        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
-        <span>Etiquetas</span>
-      </button>
-      <button type="button" class="wae-tab-btn" data-tab="all" role="tab" id="wae-tabbtn-all" aria-controls="wae-tab-all" aria-selected="false" tabindex="-1">
-        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-        <span>Todos</span>
-      </button>
-      <button type="button" class="wae-tab-btn" data-tab="chats" role="tab" id="wae-tabbtn-chats" aria-controls="wae-tab-chats" aria-selected="false" tabindex="-1">
-        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-        <span>Chats</span>
-      </button>
-    </div>
-
-    <div class="wae-body">
-      <!-- TAB 1: GRUPOS (SPACIOUS CARDS GRID) -->
-      <div class="wae-tab-pane wae-active" id="wae-tab-groups" role="tabpanel" aria-labelledby="wae-tabbtn-groups">
-        <div class="wae-group-section-header">
-          <div class="wae-fields-title-group" style="gap: 8px;">
-            <span class="wae-label">👥 Grupos Detectados</span>
-            <span class="wae-fields-badge" id="wae-groups-count">Cargando...</span>
-            <div class="wae-pills" style="margin-left: 6px;">
-              <button class="wae-group-pill-btn wae-active" data-group-filter="all">Todos</button>
-              <button class="wae-group-pill-btn" data-group-filter="archived">📁 Archivados</button>
-            </div>
-          </div>
-          <div class="wae-group-search-box">
-            <svg class="wae-group-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input type="text" id="wae-group-search-input" placeholder="Buscar grupo por nombre...">
-          </div>
-        </div>
-
-        <!-- Groups Cards Grid -->
-        <div class="wae-groups-grid" id="wae-groups-container">
-          <div class="wae-empty">Cargando grupos...</div>
-        </div>
+    <div class="wae-view" id="wae-view-results" hidden>
+      <div class="wae-results-top">
+        <button type="button" class="wae-back" id="wae-btn-back" aria-label="Volver">${ICONS.back}<span id="wae-results-title"></span></button>
+        <span class="wae-results-count" id="wae-results-count"></span>
       </div>
 
-      <!-- TAB 2: ETIQUETAS -->
-      <div class="wae-tab-pane" id="wae-tab-labels" role="tabpanel" aria-labelledby="wae-tabbtn-labels">
-        <div class="wae-group-section-header">
-          <div class="wae-fields-title-group">
-            <span class="wae-label">🏷️ Etiquetas de WhatsApp Business</span>
-          </div>
-        </div>
-        <div class="wae-labels-grid" id="wae-labels-container">
-          <div class="wae-empty">Cargando etiquetas...</div>
-        </div>
-      </div>
-
-      <!-- TAB 3: TODOS -->
-      <div class="wae-tab-pane" id="wae-tab-all" role="tabpanel" aria-labelledby="wae-tabbtn-all">
-        <p>Extrae y filtra la base de contactos completa disponible en tu WhatsApp Web.</p>
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
-          <div class="wae-pills">
-            <button class="wae-pill-btn wae-active" data-filter="all">👥 Todos los contactos</button>
-            <button class="wae-pill-btn" data-filter="unsaved">📱 Solo NO guardados</button>
-            <button class="wae-pill-btn" data-filter="saved">📇 Solo en agenda</button>
-            <button class="wae-pill-btn" data-filter="archived">📁 Solo Archivados</button>
-            <button class="wae-pill-btn" data-filter="business">🏢 Solo empresas</button>
-          </div>
-        </div>
-        <button class="wae-btn-primary" id="wae-btn-extract-all">
-          ⚡ Extraer Base de Contactos
-        </button>
-      </div>
-
-      <!-- TAB 4: CHATS -->
-      <div class="wae-tab-pane" id="wae-tab-chats" role="tabpanel" aria-labelledby="wae-tabbtn-chats">
-        <p>
-          Extrae el nombre y número telefónico de todas las conversaciones individuales (1 a 1) sincronizadas en tu WhatsApp Web.
-        </p>
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;">
-          <div class="wae-pills">
-            <button class="wae-chat-pill-btn wae-active" data-chat-filter="all">👥 Todos los chats</button>
-            <button class="wae-chat-pill-btn" data-chat-filter="active">💬 Solo activos</button>
-            <button class="wae-chat-pill-btn" data-chat-filter="archived">📁 Solo archivados</button>
-          </div>
-        </div>
-        <button class="wae-btn-primary" id="wae-btn-extract-chats">
-          ⚡ Extraer Contactos de Chats
-        </button>
-      </div>
-
-      <!-- RESULTS SECTION (TOP-ALIGNED TOOLBAR & SPATIOUS TABLE) -->
-      <div class="wae-results-section" id="wae-results-section" style="display: none;">
-        <!-- 1. Stats Ribbon -->
+      <div class="wae-results-body">
         <div class="wae-stats-ribbon">
-          <div class="wae-stat-card wae-stat-total">
-            <div class="wae-stat-card-title">Total Contactos</div>
-            <div class="wae-stat-card-value" id="wae-stat-total">0</div>
-          </div>
-          <div class="wae-stat-card wae-stat-saved">
-            <div class="wae-stat-card-title">En Agenda</div>
-            <div class="wae-stat-card-value" id="wae-stat-saved">0</div>
-          </div>
-          <div class="wae-stat-card wae-stat-unsaved">
-            <div class="wae-stat-card-title">No Guardados</div>
-            <div class="wae-stat-card-value" id="wae-stat-unsaved">0</div>
-          </div>
-          <div class="wae-stat-card wae-stat-admin">
-            <div class="wae-stat-card-title">Admins</div>
-            <div class="wae-stat-card-value" id="wae-stat-admin">0</div>
-          </div>
+          <div class="wae-stat-card"><span class="wae-stat-card-title">En agenda</span><span class="wae-stat-card-value" id="wae-stat-saved">0</span></div>
+          <div class="wae-stat-card"><span class="wae-stat-card-title">Sin guardar</span><span class="wae-stat-card-value" id="wae-stat-unsaved">0</span></div>
+          <div class="wae-stat-card"><span class="wae-stat-card-title">Admins</span><span class="wae-stat-card-value" id="wae-stat-admin">0</span></div>
         </div>
 
-        <!-- 2. Field Selection Toolbar (PLACED AT TOP OF TABLE!) -->
         <div class="wae-fields-section">
           <div class="wae-fields-header">
-            <div class="wae-fields-title-group">
-              <span class="wae-fields-title">⚙️ Columnas a Exportar</span>
-              <span class="wae-fields-badge" id="wae-fields-selected-count">2 seleccionadas</span>
-            </div>
+            <span class="wae-fields-title">Columnas <span id="wae-fields-selected-count"></span></span>
             <div class="wae-fields-presets">
-              <button class="wae-preset-btn wae-active" data-preset="name_phone">⭐ Nombre y Teléfono</button>
-              <button class="wae-preset-btn" data-preset="phone_only">📱 Solo Teléfonos</button>
-              <button class="wae-preset-btn" data-preset="name_only">👤 Solo Nombres</button>
-              <button class="wae-preset-btn" data-preset="all">📊 Todos los Datos</button>
+              <button type="button" class="wae-preset-btn" data-preset="name_phone">Nombre y teléfono</button>
+              <button type="button" class="wae-preset-btn" data-preset="phone_only">Solo teléfonos</button>
+              <button type="button" class="wae-preset-btn" data-preset="name_only">Solo nombres</button>
+              <button type="button" class="wae-preset-btn" data-preset="all">Todos los datos</button>
             </div>
           </div>
-          <div class="wae-fields-grid" id="wae-fields-checkboxes-container">
-            <!-- Rendered via JS -->
-          </div>
+          <div class="wae-fields-grid" id="wae-fields-checkboxes-container"></div>
         </div>
 
-        <!-- 3. Header with stats and search box -->
-        <div class="wae-results-header">
-          <div class="wae-stats-badge" id="wae-stats-text">
-            0 contactos encontrados
-          </div>
-          <div class="wae-search-box">
-            <svg class="wae-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input type="text" id="wae-search-input" placeholder="Buscar por nombre o teléfono...">
-          </div>
+        <div class="wae-toolbar">
+          <label class="wae-search">
+            ${ICONS.search}
+            <input type="search" id="wae-search-input" placeholder="Buscar nombre o número" aria-label="Buscar contacto" autocomplete="off">
+          </label>
+          <span class="wae-stats-badge" id="wae-stats-text"></span>
         </div>
 
-        <!-- 4. Dynamic Live Table -->
         <div class="wae-table-wrap">
           <table class="wae-table" id="wae-main-table">
-            <thead id="wae-table-head">
-              <!-- Dynamically rendered based on active fields -->
-            </thead>
-            <tbody id="wae-table-body">
-              <!-- Dynamically rendered rows -->
-            </tbody>
+            <thead id="wae-table-head"></thead>
+            <tbody id="wae-table-body"></tbody>
           </table>
         </div>
       </div>
-    </div>
 
-    <div class="wae-footer">
-      <div class="wae-export-head">
-        <p class="wae-export-lead">Elige dónde queda la agenda.</p>
-        <div class="wae-selection-count" id="wae-selection-count">0 seleccionados para exportar</div>
-      </div>
-      <div class="wae-export-grid">
-        <button class="wae-export-choice wae-btn-export wae-btn-google" id="wae-btn-export-google" type="button" title="Columnas exactas para importar en Google Contacts. La agenda queda en tu cuenta de Google, no solo en WhatsApp.">
-          <span class="wae-export-choice-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>CSV para Google Contacts</span>
-        </button>
-        <button class="wae-export-choice wae-btn-export wae-btn-vcf" id="wae-btn-export-vcf" type="button" title="Archivo vCard para la agenda del teléfono. Después se puede sincronizar con Telegram.">
-          <span class="wae-export-choice-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>Guardar en el celular</span>
-        </button>
-        <button class="wae-export-choice wae-btn-export wae-btn-csv" id="wae-btn-export-csv" type="button" title="Columnas que elijas. Para revisar o editar en Excel o Sheets. No los carga en la agenda.">
-          <span class="wae-export-choice-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>CSV para Excel</span>
-        </button>
-        <button class="wae-export-choice wae-btn-export wae-btn-json" id="wae-btn-export-json" type="button" title="Respaldo técnico, o para pasarlos a otra herramienta.">
-          <span class="wae-export-choice-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>Descargar JSON</span>
-        </button>
-        <button class="wae-export-choice wae-btn-export wae-btn-copy" id="wae-btn-copy" type="button" title="Para pegarlos en un documento o un mensaje.">
-          <span class="wae-export-choice-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>Copiar</span>
-        </button>
-      </div>
+      <footer class="wae-footer">
+        <span class="wae-selection-count" id="wae-selection-count"></span>
+        <div class="wae-export-grid">
+          <button type="button" class="wae-btn" id="wae-btn-copy">Copiar</button>
+          <button type="button" class="wae-btn" id="wae-btn-export-json">JSON</button>
+          <button type="button" class="wae-btn" id="wae-btn-export-csv">Excel (CSV)</button>
+          <button type="button" class="wae-btn" id="wae-btn-export-vcf">Celular (.vcf)</button>
+          <button type="button" class="wae-btn wae-btn-primary" id="wae-btn-export-google">Google Contacts</button>
+        </div>
+      </footer>
     </div>
   `;
   shadow.appendChild(modal);
 
   renderFieldCheckboxes();
   attachEventListeners();
+  renderView();
+}
+
+function dispatch(action) {
+  view = reduceView(view, action);
+  renderView();
+}
+
+function getTabButtons() {
+  return Array.from(shadow.querySelectorAll('.wae-tab')).filter(btn => !btn.hidden);
+}
+
+function attachEventListeners() {
+  byId('wae-btn-close').addEventListener('click', closeModal);
+  byId('wae-backdrop').addEventListener('click', closeModal);
+
+  shadow.querySelectorAll('.wae-tab').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
+    btn.addEventListener('keydown', (e) => {
+      const tabs = getTabButtons();
+      const next = nextTabIndex(tabs.indexOf(btn), e.key, tabs.length);
+      if (next === null) return;
+      e.preventDefault();
+      switchTab(tabs[next].getAttribute('data-tab'));
+      tabs[next].focus();
+    });
+  });
+
+  byId('wae-btn-archived').addEventListener('click', (e) => {
+    groupArchivedOnly = !groupArchivedOnly;
+    e.currentTarget.setAttribute('aria-pressed', String(groupArchivedOnly));
+    renderGroups();
+  });
+
+  byId('wae-group-search-input').addEventListener('input', (e) => {
+    groupSearchTerm = e.target.value.toLowerCase().trim();
+    renderGroups();
+  });
+
+  byId('wae-groups-container').addEventListener('click', (e) => {
+    const row = e.target.closest('[data-group-id]');
+    if (row) runExtraction(`group:${row.dataset.groupId}`, 'EXTRACT_GROUP', { groupId: row.dataset.groupId }, res => res.groupTitle);
+    if (e.target.closest('#wae-btn-retry')) loadOverview();
+  });
+
+  byId('wae-labels-container').addEventListener('click', (e) => {
+    const row = e.target.closest('[data-label-id]');
+    if (row) runExtraction(`label:${row.dataset.labelId}`, 'EXTRACT_LABEL', { labelId: row.dataset.labelId }, res => res.labelName);
+  });
+
+  byId('wae-btn-extract-all').addEventListener('click', () => {
+    const select = byId('wae-all-filter');
+    runExtraction('all', 'EXTRACT_ALL', { filter: select.value }, () => select.selectedOptions[0].textContent);
+  });
+
+  byId('wae-btn-extract-chats').addEventListener('click', () => {
+    const select = byId('wae-chat-filter');
+    runExtraction('chats', 'EXTRACT_CHATS', { filter: select.value }, () => select.selectedOptions[0].textContent);
+  });
+
+  byId('wae-btn-back').addEventListener('click', () => {
+    dispatch({ type: 'BACK' });
+    const row = lastRequestKey && shadow.querySelector(`[data-request="${CSS.escape(lastRequestKey)}"]`);
+    (row || shadow.querySelector('.wae-tab[aria-selected="true"]')).focus();
+  });
+
+  shadow.querySelectorAll('.wae-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => applyFieldPreset(btn.getAttribute('data-preset')));
+  });
+
+  byId('wae-search-input').addEventListener('input', (e) => {
+    searchTerm = e.target.value.toLowerCase().trim();
+    visibleLimit = PAGE_SIZE;
+    renderTable();
+  });
+
+  byId('wae-btn-export-csv').addEventListener('click', () => exportData('csv'));
+  byId('wae-btn-export-vcf').addEventListener('click', () => exportData('vcf'));
+  byId('wae-btn-export-google').addEventListener('click', () => exportData('google'));
+  byId('wae-btn-export-json').addEventListener('click', () => exportData('json'));
+  byId('wae-btn-copy').addEventListener('click', handleCopyData);
+}
+
+function switchTab(tab) {
+  const current = byId(`wae-tab-${view.tab}`);
+  if (current) paneScroll[view.tab] = current.scrollTop;
+  dispatch({ type: 'TAB', tab });
+}
+
+/**
+ * Applies the view state to the DOM: which view, which tab, what is loading
+ */
+function renderView() {
+  const isResults = view.view === 'results';
+  const sourceView = byId('wae-view-source');
+  const resultsView = byId('wae-view-results');
+  sourceView.hidden = isResults;
+  resultsView.hidden = !isResults;
+
+  const tabs = visibleTabs(overviewData);
+  if (!tabs.includes(view.tab)) {
+    view = reduceView(view, { type: 'TAB', tab: 'groups' });
+  }
+
+  shadow.querySelectorAll('.wae-tab').forEach(btn => {
+    const tab = btn.getAttribute('data-tab');
+    const isActive = tab === view.tab;
+    btn.hidden = !tabs.includes(tab);
+    btn.setAttribute('aria-selected', String(isActive));
+    btn.tabIndex = isActive ? 0 : -1;
+  });
+  shadow.querySelectorAll('.wae-pane').forEach(pane => {
+    pane.hidden = pane.id !== `wae-tab-${view.tab}`;
+  });
+  const activePane = byId(`wae-tab-${view.tab}`);
+  if (!isResults && activePane && paneScroll[view.tab] !== undefined) {
+    activePane.scrollTop = paneScroll[view.tab];
+  }
+
+  const busy = Boolean(view.loading);
+  sourceView.setAttribute('aria-busy', String(busy));
+  shadow.querySelectorAll('[data-request]').forEach(el => {
+    const isLoading = el.getAttribute('data-request') === view.loading;
+    el.disabled = busy;
+    el.classList.toggle('wae-is-loading', isLoading);
+    if (el.classList.contains('wae-btn')) {
+      el.textContent = isLoading ? 'Leyendo contactos…' : 'Ver contactos';
+    }
+  });
+
+  const alert = byId('wae-error');
+  alert.hidden = !view.error;
+  alert.textContent = view.error || '';
+}
+
+function renderGroups() {
+  const container = byId('wae-groups-container');
+  if (!container) return;
+
+  if (overviewFailed) {
+    container.innerHTML = `
+      <li class="wae-empty">
+        <p>No se pudo leer WhatsApp Web.</p>
+        <button type="button" class="wae-btn" id="wae-btn-retry">Reintentar</button>
+      </li>
+    `;
+    return;
+  }
+
+  if (!overviewData) {
+    container.innerHTML = Array.from({ length: 6 }, () => '<li class="wae-skeleton" aria-hidden="true"></li>').join('');
+    return;
+  }
+
+  const allGroups = overviewData.groups || [];
+  const filtered = allGroups.filter(g => {
+    if (groupArchivedOnly && !g.isArchived) return false;
+    if (!groupSearchTerm) return true;
+    return g.title.toLowerCase().includes(groupSearchTerm);
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <li class="wae-empty">
+        <p>${allGroups.length === 0 ? 'No encontramos grupos. Abre WhatsApp Web, espera a que carguen tus chats y vuelve a abrir CLC Agenda.' : 'Ningún grupo coincide con la búsqueda.'}</p>
+      </li>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(g => {
+    const key = `group:${g.id}`;
+    return `
+      <li>
+        <button type="button" class="wae-row" data-group-id="${escapeHTML(g.id)}" data-request="${escapeHTML(key)}">
+          <span class="wae-row-title">${escapeHTML(g.title)}</span>
+          ${g.isArchived ? '<span class="wae-chip">Archivado</span>' : ''}
+          <span class="wae-row-meta">${memberCountLabel(g.participantCount)}</span>
+          <span class="wae-row-end">${ICONS.chevron}<span class="wae-spinner" aria-hidden="true"></span></span>
+        </button>
+      </li>
+    `;
+  }).join('');
+  renderView();
+}
+
+function renderLabels() {
+  const container = byId('wae-labels-container');
+  if (!container || !overviewData) return;
+  const labels = overviewData.labels || [];
+
+  container.innerHTML = labels.map(l => {
+    const key = `label:${l.id}`;
+    return `
+      <li>
+        <button type="button" class="wae-row" data-label-id="${escapeHTML(l.id)}" data-request="${escapeHTML(key)}">
+          <span class="wae-dot" aria-hidden="true"></span>
+          <span class="wae-row-title">${escapeHTML(l.name)}</span>
+          <span class="wae-row-meta">${l.count} ${l.count === 1 ? 'contacto' : 'contactos'}</span>
+          <span class="wae-row-end">${ICONS.chevron}<span class="wae-spinner" aria-hidden="true"></span></span>
+        </button>
+      </li>
+    `;
+  }).join('');
+
+  container.querySelectorAll('.wae-row').forEach((row, index) => {
+    // Label colors come from WhatsApp data, so they are set as a property, not markup
+    const color = labels[index].color;
+    if (color) row.style.setProperty('--label-color', String(color));
+  });
+  renderView();
+}
+
+async function loadOverview() {
+  overviewFailed = false;
+  if (!overviewData) renderGroups();
+  try {
+    overviewData = await sendPageRequest('GET_OVERVIEW');
+  } catch (err) {
+    console.warn('[WA Extractor] Load overview warning:', err);
+    overviewFailed = true;
+  }
+  renderGroups();
+  renderLabels();
+  renderView();
+}
+
+async function runExtraction(key, action, payload, titleOf) {
+  if (view.loading) return;
+  lastRequestKey = key;
+  const pane = byId(`wae-tab-${view.tab}`);
+  if (pane) paneScroll[view.tab] = pane.scrollTop;
+  dispatch({ type: 'REQUEST', key });
+  try {
+    const res = await sendPageRequest(action, payload);
+    setExtractedResults(res.contacts, titleOf(res));
+  } catch (err) {
+    dispatch({ type: 'FAIL', message: friendlyError(err.message) });
+  }
+}
+
+function setExtractedResults(contacts, title) {
+  extractedContacts = contacts || [];
+  selectedContactIds = new Set(extractedContacts.map(contactKey));
+  searchTerm = '';
+  visibleLimit = PAGE_SIZE;
+  byId('wae-search-input').value = '';
+
+  const savedCount = extractedContacts.filter(c => c.isMyContact).length;
+  byId('wae-results-title').textContent = title || 'Contactos';
+  byId('wae-results-count').textContent = `${extractedContacts.length} ${extractedContacts.length === 1 ? 'contacto' : 'contactos'}`;
+  byId('wae-stat-saved').textContent = savedCount;
+  byId('wae-stat-unsaved').textContent = extractedContacts.length - savedCount;
+  byId('wae-stat-admin').textContent = extractedContacts.filter(c => c.isAdmin).length;
+
+  dispatch({ type: 'RESULTS', title, contacts: extractedContacts });
+  renderTable();
+  byId('wae-btn-back').focus();
 }
 
 function renderFieldCheckboxes() {
@@ -608,12 +784,12 @@ function renderFieldCheckboxes() {
           selectedFields.delete(fieldId);
         } else {
           e.target.checked = true;
-          showToast('Debes seleccionar al menos un campo para exportar.', true);
+          showToast('Deja al menos una columna.', true);
           return;
         }
       }
       updateFieldSelectionUI();
-      renderTable(); // Instant Live Real-Time Table Sync!
+      renderTable();
     });
   });
 
@@ -634,7 +810,7 @@ function updateFieldSelectionUI() {
 
   const countSpan = byId('wae-fields-selected-count');
   if (countSpan) {
-    countSpan.textContent = `${selectedFields.size} seleccionada${selectedFields.size > 1 ? 's' : ''}`;
+    countSpan.textContent = `(${selectedFields.size})`;
   }
 
   shadow.querySelectorAll('.wae-preset-btn').forEach(btn => {
@@ -659,265 +835,6 @@ function applyFieldPreset(preset) {
     selectedFields = new Set(AVAILABLE_FIELDS.map(f => f.id));
   }
   updateFieldSelectionUI();
-  renderTable(); // Instant Live Real-Time Table Sync!
-}
-
-function attachEventListeners() {
-  const backdrop = byId('wae-backdrop');
-  const closeBtn = byId('wae-btn-close');
-
-  closeBtn.addEventListener('click', closeModal);
-  backdrop.addEventListener('click', closeModal);
-
-  const tabBtns = Array.from(shadow.querySelectorAll('.wae-tab-btn'));
-  const selectTab = (btn) => {
-    tabBtns.forEach(b => {
-      const isActive = b === btn;
-      b.classList.toggle('wae-active', isActive);
-      b.setAttribute('aria-selected', String(isActive));
-      b.tabIndex = isActive ? 0 : -1;
-    });
-
-    const tab = btn.getAttribute('data-tab');
-    activeTab = tab;
-
-    shadow.querySelectorAll('.wae-tab-pane').forEach(p => p.classList.remove('wae-active'));
-    const pane = byId(`wae-tab-${tab}`);
-    if (pane) pane.classList.add('wae-active');
-  };
-  tabBtns.forEach((btn, index) => {
-    btn.addEventListener('click', () => selectTab(btn));
-    btn.addEventListener('keydown', (e) => {
-      const next = nextTabIndex(index, e.key, tabBtns.length);
-      if (next === null) return;
-      e.preventDefault();
-      tabBtns[next].focus();
-      selectTab(tabBtns[next]);
-    });
-  });
-
-  // Todos Tab filter pills
-  const pillBtns = shadow.querySelectorAll('.wae-pill-btn');
-  pillBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      pillBtns.forEach(b => b.classList.remove('wae-active'));
-      btn.classList.add('wae-active');
-      currentFilter = btn.getAttribute('data-filter');
-    });
-  });
-
-  // Chats Tab filter pills
-  const chatPillBtns = shadow.querySelectorAll('.wae-chat-pill-btn');
-  chatPillBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      chatPillBtns.forEach(b => b.classList.remove('wae-active'));
-      btn.classList.add('wae-active');
-      currentChatFilter = btn.getAttribute('data-chat-filter');
-    });
-  });
-
-  // Groups Tab filter pills
-  const groupPillBtns = shadow.querySelectorAll('.wae-group-pill-btn');
-  groupPillBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      groupPillBtns.forEach(b => b.classList.remove('wae-active'));
-      btn.classList.add('wae-active');
-      currentGroupFilter = btn.getAttribute('data-group-filter');
-      renderGroups();
-    });
-  });
-
-  shadow.querySelectorAll('.wae-preset-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const preset = btn.getAttribute('data-preset');
-      applyFieldPreset(preset);
-    });
-  });
-
-  byId('wae-btn-extract-all').addEventListener('click', handleExtractAllClick);
-  byId('wae-btn-extract-chats').addEventListener('click', handleExtractChatsClick);
-
-  // Group Search Input
-  const groupSearchInput = byId('wae-group-search-input');
-  if (groupSearchInput) {
-    groupSearchInput.addEventListener('input', (e) => {
-      groupSearchTerm = e.target.value.toLowerCase().trim();
-      renderGroups();
-    });
-  }
-
-  // Results Search Input
-  byId('wae-search-input').addEventListener('input', (e) => {
-    searchTerm = e.target.value.toLowerCase().trim();
-    visibleLimit = PAGE_SIZE;
-    renderTable();
-  });
-
-  byId('wae-btn-export-csv').addEventListener('click', () => exportData('csv'));
-  byId('wae-btn-export-vcf').addEventListener('click', () => exportData('vcf'));
-  byId('wae-btn-export-google').addEventListener('click', () => exportData('google'));
-  byId('wae-btn-export-json').addEventListener('click', () => exportData('json'));
-  byId('wae-btn-copy').addEventListener('click', handleCopyData);
-}
-
-function renderGroups() {
-  const container = byId('wae-groups-container');
-  const countBadge = byId('wae-groups-count');
-  if (!container || !overviewData) return;
-
-  const allGroups = overviewData.groups || [];
-  const filtered = allGroups.filter(g => {
-    if (currentGroupFilter === 'archived' && !g.isArchived) return false;
-    if (!groupSearchTerm) return true;
-    return g.title.toLowerCase().includes(groupSearchTerm);
-  });
-
-  if (countBadge) {
-    countBadge.textContent = `${filtered.length} grupo${filtered.length === 1 ? '' : 's'}`;
-  }
-
-  if (filtered.length === 0) {
-    container.innerHTML = `
-      <div class="wae-empty">
-        ${allGroups.length === 0 ? 'No se encontraron grupos en la base de datos local.' : 'No hay grupos que coincidan con el filtro o la búsqueda.'}
-      </div>
-    `;
-    return;
-  }
-
-  container.innerHTML = filtered.map(g => {
-    const chipText = g.participantCount > 0 ? `${g.participantCount} miembros` : '⚡ Extraer miembros';
-    const archiveBadge = g.isArchived ? `<span class="wae-chip-archived">Archivado</span> ` : '';
-    return `
-      <div class="wae-group-card" data-group-id="${escapeHTML(g.id)}">
-        <div class="wae-group-card-header">
-          <span class="wae-group-card-title" title="${escapeHTML(g.title)}">${archiveBadge}${escapeHTML(g.title)}</span>
-          <span class="wae-group-chip">${chipText}</span>
-        </div>
-        <div class="wae-group-card-action">
-          <span>⚡ Extraer participantes</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  container.querySelectorAll('.wae-group-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const groupId = card.getAttribute('data-group-id');
-      handleExtractGroupById(groupId);
-    });
-  });
-}
-
-async function loadOverview() {
-  try {
-    const data = await sendPageRequest('GET_OVERVIEW');
-    overviewData = data;
-
-    renderGroups();
-
-    const labelsContainer = byId('wae-labels-container');
-    if (data.labels && data.labels.length > 0) {
-      labelsContainer.innerHTML = data.labels.map(l => {
-        return `
-          <div class="wae-label-card" data-label-id="${escapeHTML(l.id)}">
-            <div class="wae-label-card-header">
-              <span class="wae-label-card-name" title="${escapeHTML(l.name)}">${escapeHTML(l.name)}</span>
-              <span class="wae-label-chip">${l.count} contactos</span>
-            </div>
-            <div class="wae-label-card-action">
-              <span>⚡ Extraer contactos</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      labelsContainer.querySelectorAll('.wae-label-card').forEach((card, index) => {
-        // Label colors come from WhatsApp data, so they are set as a property, not markup
-        const color = data.labels[index].color;
-        if (color) card.style.setProperty('--label-color', String(color));
-        card.addEventListener('click', () => {
-          const labelId = card.getAttribute('data-label-id');
-          handleExtractLabelClick(labelId);
-        });
-      });
-    } else {
-      labelsContainer.innerHTML = `
-        <div class="wae-empty">
-          No se detectaron etiquetas de WhatsApp Business activas.
-        </div>
-      `;
-    }
-  } catch (err) {
-    console.warn('[WA Extractor] Load overview warning:', err);
-  }
-}
-
-async function handleExtractGroupById(groupId) {
-  if (!groupId) {
-    showToast('Por favor selecciona un grupo válido.', true);
-    return;
-  }
-
-  try {
-    showToast('Extrayendo participantes del grupo...');
-    const res = await sendPageRequest('EXTRACT_GROUP', { groupId });
-    setExtractedResults(res.contacts, `Grupo: ${res.groupTitle}`);
-  } catch (err) {
-    showToast(err.message || 'Error al extraer grupo.', true);
-  }
-}
-
-async function handleExtractLabelClick(labelId) {
-  try {
-    showToast('Extrayendo contactos por etiqueta...');
-    const res = await sendPageRequest('EXTRACT_LABEL', { labelId });
-    setExtractedResults(res.contacts, `Etiqueta: ${res.labelName}`);
-  } catch (err) {
-    showToast(err.message || 'Error al extraer etiqueta.', true);
-  }
-}
-
-async function handleExtractAllClick() {
-  try {
-    showToast('Extrayendo base de contactos...');
-    const res = await sendPageRequest('EXTRACT_ALL', { filter: currentFilter });
-    setExtractedResults(res.contacts, `Contactos (${currentFilter === 'archived' ? 'Archivados' : currentFilter})`);
-  } catch (err) {
-    showToast(err.message || 'Error al extraer contactos.', true);
-  }
-}
-
-async function handleExtractChatsClick() {
-  try {
-    showToast('Extrayendo contactos de chats...');
-    const res = await sendPageRequest('EXTRACT_CHATS', { filter: currentChatFilter });
-    setExtractedResults(res.contacts, `Chats (${currentChatFilter === 'archived' ? 'Archivados' : currentChatFilter})`);
-  } catch (err) {
-    showToast(err.message || 'Error al extraer chats.', true);
-  }
-}
-
-function setExtractedResults(contacts, sourceDescription) {
-  extractedContacts = contacts || [];
-  selectedContactIds = new Set(extractedContacts.map(contactKey));
-  visibleLimit = PAGE_SIZE;
-
-  const resultsSection = byId('wae-results-section');
-  resultsSection.style.display = 'flex';
-
-  const savedCount = extractedContacts.filter(c => c.isMyContact).length;
-  const unsavedCount = extractedContacts.length - savedCount;
-  const adminCount = extractedContacts.filter(c => c.isAdmin).length;
-
-  byId('wae-stat-total').textContent = extractedContacts.length;
-  byId('wae-stat-saved').textContent = savedCount;
-  byId('wae-stat-unsaved').textContent = unsavedCount;
-  byId('wae-stat-admin').textContent = adminCount;
-
-  showToast(`✅ ${extractedContacts.length} contactos extraídos con éxito.`);
   renderTable();
 }
 
@@ -940,11 +857,11 @@ function renderTable() {
   const allSelected = areAllSelected(selectedContactIds, filtered);
   thead.innerHTML = `
     <tr>
-      <th style="width: 38px;">
-        <input type="checkbox" id="wae-select-all" ${allSelected ? 'checked' : ''}>
+      <th class="wae-col-check">
+        <input type="checkbox" id="wae-select-all" aria-label="Seleccionar todos los contactos visibles" ${allSelected ? 'checked' : ''}>
       </th>
       ${activeFields.map(f => `<th>${escapeHTML(f.shortHeader)}</th>`).join('')}
-      <th style="width: 50px; text-align: right;">Copiar</th>
+      <th class="wae-col-action"><span class="wae-sr-only">Copiar</span></th>
     </tr>
   `;
 
@@ -956,8 +873,8 @@ function renderTable() {
     });
   }
 
-  statsText.innerHTML = `Mostrando <strong>${rows.length}</strong> de ${extractedContacts.length} contactos`;
-  selectionCount.textContent = `${selectedContactIds.size} seleccionados de ${extractedContacts.length} totales`;
+  statsText.textContent = rows.length < extractedContacts.length ? `${rows.length} de ${extractedContacts.length}` : '';
+  selectionCount.textContent = `${selectedContactIds.size} seleccionados`;
 
   const totalCols = activeFields.length + 2;
 
@@ -968,7 +885,7 @@ function renderTable() {
 
   // 3. Render Dynamic <tbody> rows
   const loadMoreRow = hiddenCount > 0
-    ? `<tr><td colspan="${totalCols}" style="text-align:center; padding: 14px;"><button type="button" class="wae-pill-btn" id="wae-btn-load-more">Mostrar ${Math.min(PAGE_SIZE, hiddenCount)} más (quedan ${hiddenCount})</button></td></tr>`
+    ? `<tr><td colspan="${totalCols}" class="wae-load-more"><button type="button" class="wae-btn" id="wae-btn-load-more">Mostrar ${Math.min(PAGE_SIZE, hiddenCount)} más (quedan ${hiddenCount})</button></td></tr>`
     : '';
 
   tbody.innerHTML = rows.map(c => {
@@ -979,13 +896,11 @@ function renderTable() {
     return `
       <tr>
         <td>
-          <input type="checkbox" class="wae-row-check" data-id="${escapeHTML(id)}" ${isSelected ? 'checked' : ''}>
+          <input type="checkbox" class="wae-row-check" data-id="${escapeHTML(id)}" aria-label="Seleccionar ${escapeHTML(c.name || c.savedName || c.pushName || quickPhone)}" ${isSelected ? 'checked' : ''}>
         </td>
         ${activeFields.map(f => `<td>${f.renderCell(c)}</td>`).join('')}
-        <td style="text-align: right;">
-          <button class="wae-btn-copy-row" data-phone="${escapeHTML(quickPhone)}" title="Copiar este número">
-            📋
-          </button>
+        <td class="wae-col-action">
+          <button type="button" class="wae-icon-btn wae-btn-copy-row" data-phone="${escapeHTML(quickPhone)}" aria-label="Copiar ${escapeHTML(quickPhone)}" title="Copiar número">${ICONS.copy}</button>
         </td>
       </tr>
     `;
@@ -1007,7 +922,7 @@ function renderTable() {
       } else {
         selectedContactIds.delete(id);
       }
-      selectionCount.textContent = `${selectedContactIds.size} seleccionados de ${extractedContacts.length} totales`;
+      selectionCount.textContent = `${selectedContactIds.size} seleccionados`;
       if (selectAllInput) {
         selectAllInput.checked = areAllSelected(selectedContactIds, filtered);
       }
@@ -1084,7 +999,7 @@ function handleCopyData() {
   }
 
   navigator.clipboard.writeText(textToCopy).then(() => {
-    showToast(`📋 ${list.length} contactos copiados al portapapeles según tu selección.`);
+    showToast(`${list.length} contactos copiados`);
   }).catch(() => {
     showToast('No se pudo acceder al portapapeles.', true);
   });
