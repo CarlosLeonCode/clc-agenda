@@ -11,6 +11,7 @@ import { exportToVCard } from '../exporters/vcard.js';
 import { exportToGoogleContactsCSV } from '../exporters/google-contacts.js';
 import { exportToJSON } from '../exporters/json.js';
 import { clampLauncherPosition } from './launcher-position.js';
+import { markSVG } from './brand.js';
 import { sendPageRequest } from './page-request.js';
 import { nextTabIndex, nextFocusIndex } from './a11y.js';
 import { initialViewState, reduceView, visibleTabs, memberCountLabel, friendlyError, summarize, quickFilterContacts } from './view-state.js';
@@ -39,8 +40,7 @@ const ICONS = {
   back: '<svg class="wae-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>',
   search: '<svg class="wae-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
   close: '<svg class="wae-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>',
-  copy: '<svg class="wae-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>',
-  logo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12c0 1.82.49 3.53 1.34 5.01L2 22l5.12-1.33C8.57 21.49 10.24 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.53 0-2.98-.44-4.22-1.19l-.3-.18-3.04.79.81-2.96-.2-.31C4.34 14.93 3.89 13.51 3.89 12 3.89 7.53 7.53 3.89 12 3.89s8.11 3.64 8.11 8.11-3.64 8.11-8.11 8.11z"/></svg>'
+  copy: '<svg class="wae-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>'
 };
 
 const TAB_LABELS = { groups: 'Grupos', labels: 'Etiquetas', all: 'Contactos', chats: 'Chats' };
@@ -129,7 +129,6 @@ function getActiveOrderedFields() {
   return AVAILABLE_FIELDS.filter(f => selectedFields.has(f.id));
 }
 
-const CHAT_ICON = '<path d="M12 2C6.48 2 2 6.48 2 12c0 1.82.49 3.53 1.34 5.01L2 22l5.12-1.33C8.57 21.49 10.24 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.53 0-2.98-.44-4.22-1.19l-.3-.18-3.04.79.81-2.96-.2-.31C4.34 14.93 3.89 13.51 3.89 12 3.89 7.53 7.53 3.89 12 3.89s8.11 3.64 8.11 8.11-3.64 8.11-8.11 8.11z"/>';
 const FOCUSABLE = 'button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])';
 
 /**
@@ -323,7 +322,7 @@ function initUI() {
   launcher.id = 'wae-launcher';
   launcher.innerHTML = `
     <button type="button" class="wae-launcher-btn" id="wae-launcher-btn" aria-haspopup="dialog" aria-controls="wae-modal-container" aria-label="Extraer contactos con CLC Agenda">
-      <svg viewBox="0 0 24 24" aria-hidden="true">${CHAT_ICON}</svg>
+      ${markSVG({ bubble: 'currentColor' })}
       <span>Extraer contactos</span>
     </button>
     <div class="wae-dock-controls" role="group" aria-label="Mover el botón">
@@ -361,7 +360,7 @@ function initUI() {
   modal.inert = true;
   modal.innerHTML = `
     <header class="wae-header">
-      <h2 class="wae-title" id="wae-title"><span class="wae-logo">${ICONS.logo}</span>CLC Agenda</h2>
+      <h2 class="wae-title" id="wae-title"><span class="wae-logo">${markSVG({ bubble: 'currentColor' })}</span>CLC Agenda</h2>
       <button type="button" class="wae-icon-btn" id="wae-btn-close" aria-label="Cerrar" title="Cerrar">${ICONS.close}</button>
     </header>
 
