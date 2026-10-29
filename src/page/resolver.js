@@ -1,6 +1,7 @@
 import { cleanPhoneNumber, isLid, detectCountry } from '../core/phone.js';
 import { mergeContactRecord } from '../core/contact-record.js';
 import { findSuffixMatch } from '../core/suffix-match.js';
+import { store } from './webpack-store.js';
 
 /**
  * Resolves contact with exact match, suffix match, and live Store hydration
@@ -66,21 +67,21 @@ export async function buildResolvedContact(initialData, dataBundle, extra = {}) 
   }
 
   // 6. Live Store Hydration
-  if (!aggregated.savedName && window.Store) {
+  if (!aggregated.savedName && store) {
     try {
-      if (window.Store.Contact) {
-        const direct = window.Store.Contact.get(`${phone}@c.us`) || (rawId ? window.Store.Contact.get(rawId) : null);
+      if (store.Contact) {
+        const direct = store.Contact.get(`${phone}@c.us`) || (rawId ? store.Contact.get(rawId) : null);
         if (direct) {
           mergeContactRecord(aggregated, direct);
-        } else if (window.Store.Contact.find) {
+        } else if (store.Contact.find) {
           try {
-            const found = await window.Store.Contact.find(rawId || `${phone}@c.us`);
+            const found = await store.Contact.find(rawId || `${phone}@c.us`);
             if (found) mergeContactRecord(aggregated, found);
           } catch (e) {}
         }
       }
-      if (window.Store.Chat) {
-        const sch = window.Store.Chat.get(`${phone}@c.us`);
+      if (store.Chat) {
+        const sch = store.Chat.get(`${phone}@c.us`);
         if (sch) mergeContactRecord(aggregated, sch);
       }
     } catch (e) {}
@@ -112,21 +113,21 @@ export async function buildResolvedContact(initialData, dataBundle, extra = {}) 
  * Resolves Active Open Group from WhatsApp Web DOM or Store
  */
 export function findActiveOpenGroup(dataBundle) {
-  if (window.Store && window.Store.Chat) {
+  if (store && store.Chat) {
     try {
-      if (window.Store.Chat.getActive) {
-        const active = window.Store.Chat.getActive();
+      if (store.Chat.getActive) {
+        const active = store.Chat.getActive();
         if (active) {
           const rawId = active.id?._serialized || active.id;
           if (rawId && rawId.includes('@g.us')) return rawId;
         }
       }
-      if (window.Store.Chat.active) {
-        const active = window.Store.Chat.active;
+      if (store.Chat.active) {
+        const active = store.Chat.active;
         const rawId = active.id?._serialized || active.id;
         if (rawId && rawId.includes('@g.us')) return rawId;
       }
-      const models = window.Store.Chat._models || window.Store.Chat.models || [];
+      const models = store.Chat._models || store.Chat.models || [];
       const activeM = models.find(c => c.active || c.__x?.active);
       if (activeM) {
         const rawId = activeM.id?._serialized || activeM.id;

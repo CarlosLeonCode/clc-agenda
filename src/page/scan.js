@@ -2,7 +2,7 @@ import { cleanPhoneNumber, isLid } from '../core/phone.js';
 import { extractParticipantsList } from '../core/groups.js';
 import { mergeContactRecord } from '../core/contact-record.js';
 import { addToSuffixIndex } from '../core/suffix-match.js';
-import { initWebpackStore } from './webpack-store.js';
+import { initWebpackStore, store } from './webpack-store.js';
 import { openDatabase, getAllFromStore } from './indexeddb.js';
 
 let cachedDbData = null;
@@ -204,15 +204,15 @@ export async function scanAllIndexedDB(force = false) {
 }
 
 function enrichFromStore(result, indexRecord) {
-  if (!window.Store) return;
+  if (!store) return;
 
-  if (window.Store.Contact) {
-    const models = window.Store.Contact._models || window.Store.Contact.models || [];
+  if (store.Contact) {
+    const models = store.Contact._models || store.Contact.models || [];
     for (const c of models) indexRecord(c);
   }
 
-  if (window.Store.GroupMetadata) {
-    const models = window.Store.GroupMetadata._models || window.Store.GroupMetadata.models || [];
+  if (store.GroupMetadata) {
+    const models = store.GroupMetadata._models || store.GroupMetadata.models || [];
     for (const g of models) {
       const id = g.id?._serialized || g.id;
       if (id) {
@@ -225,16 +225,16 @@ function enrichFromStore(result, indexRecord) {
     }
   }
 
-  if (window.Store.Label) {
-    const models = window.Store.Label._models || window.Store.Label.models || [];
+  if (store.Label) {
+    const models = store.Label._models || store.Label.models || [];
     for (const l of models) {
       const id = l.id?._serialized || l.id;
       if (id) result.labels.set(String(id), l.__x || l);
     }
   }
 
-  if (window.Store.Chat) {
-    const models = window.Store.Chat._models || window.Store.Chat.models || [];
+  if (store.Chat) {
+    const models = store.Chat._models || store.Chat.models || [];
     for (const ch of models) {
       const id = ch.id?._serialized || ch.id;
       if (id) {

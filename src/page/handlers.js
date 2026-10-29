@@ -1,6 +1,6 @@
 import { cleanPhoneNumber } from '../core/phone.js';
 import { extractParticipantsList, getGroupParticipantCount } from '../core/groups.js';
-import { initWebpackStore } from './webpack-store.js';
+import { initWebpackStore, store } from './webpack-store.js';
 import { scanAllIndexedDB } from './scan.js';
 import { buildResolvedContact, findActiveOpenGroup } from './resolver.js';
 
@@ -22,39 +22,39 @@ export async function handleExtractGroup(groupId) {
   let group = data.groups.get(targetGroupId) || data.chats.get(targetGroupId);
 
   // Layer 1: Live Store GroupMetadata Fetch
-  if (window.Store && window.Store.GroupMetadata) {
+  if (store && store.GroupMetadata) {
     try {
-      if (window.Store.GroupMetadata.find) {
+      if (store.GroupMetadata.find) {
         try {
-          const liveFind = await window.Store.GroupMetadata.find(targetGroupId);
+          const liveFind = await store.GroupMetadata.find(targetGroupId);
           if (liveFind) group = liveFind.__x || liveFind;
         } catch (e) {}
       }
       if (!group || extractParticipantsList(group).length === 0) {
-        if (window.Store.GroupMetadata.queryAndUpdate) {
+        if (store.GroupMetadata.queryAndUpdate) {
           try {
-            const qResult = await window.Store.GroupMetadata.queryAndUpdate(targetGroupId);
+            const qResult = await store.GroupMetadata.queryAndUpdate(targetGroupId);
             if (qResult) group = qResult.__x || qResult;
           } catch (e) {}
         }
-        const liveG = window.Store.GroupMetadata.get(targetGroupId);
+        const liveG = store.GroupMetadata.get(targetGroupId);
         if (liveG) group = liveG.__x || liveG;
       }
     } catch (e) {}
   }
 
   // Layer 2: Live Store Chat & Cmd openChatAt trigger
-  if ((!group || extractParticipantsList(group).length === 0) && window.Store && window.Store.Chat) {
+  if ((!group || extractParticipantsList(group).length === 0) && store && store.Chat) {
     try {
-      const liveChat = window.Store.Chat.get(targetGroupId);
+      const liveChat = store.Chat.get(targetGroupId);
       if (liveChat) {
         const rawChat = liveChat.__x || liveChat;
         if (rawChat.groupMetadata) {
           group = rawChat.groupMetadata.__x || rawChat.groupMetadata;
         }
-        if ((!group || extractParticipantsList(group).length === 0) && window.Store.Cmd && window.Store.Cmd.openChatAt) {
+        if ((!group || extractParticipantsList(group).length === 0) && store.Cmd && store.Cmd.openChatAt) {
           try {
-            window.Store.Cmd.openChatAt(liveChat);
+            store.Cmd.openChatAt(liveChat);
             await new Promise(r => setTimeout(r, 450));
             if (rawChat.groupMetadata) group = rawChat.groupMetadata.__x || rawChat.groupMetadata;
           } catch (e) {}

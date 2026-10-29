@@ -7,6 +7,12 @@ export const GOOGLE_CONTACT_HEADERS = [
   'Email 1 - Type', 'Email 1 - Value', 'Notes', 'Labels'
 ];
 
+// Spreadsheets run cells starting with these characters as formulas
+function neutralizeFormula(value) {
+  const text = value == null ? '' : String(value);
+  return /^[=\-+@\t\r]/.test(text) ? `'${text}` : text;
+}
+
 function csvField(value) {
   const text = value == null ? '' : String(value);
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
@@ -17,10 +23,14 @@ export function exportToGoogleContactsCSV(contacts = []) {
   const rows = contacts.map(contact => {
     const normalized = normalizeContact(contact);
     const { firstName, lastName } = splitDisplayName(normalized.displayName);
-    return [
+    const text = [
       firstName, '', lastName, '', '', '', '', '', normalized.organization, '',
-      normalized.phone ? 'Mobile' : '', normalized.phone, '', '', normalized.note,
-      normalized.labels.join(' ::: ')
+      normalized.phone ? 'Mobile' : ''
+    ].map(neutralizeFormula);
+    // The phone keeps its leading "+": it is the E.164 value Google expects
+    return [
+      ...text, normalized.phone, '', '', neutralizeFormula(normalized.note),
+      neutralizeFormula(normalized.labels.join(' ::: '))
     ].map(csvField).join(',');
   });
   return '\uFEFF' + [GOOGLE_CONTACT_HEADERS.map(csvField).join(','), ...rows].join('\r\n');
