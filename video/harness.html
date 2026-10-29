@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CLC Agenda harness</title>
+</head><body style="margin:0;background:#111b21;height:100vh;font-family:system-ui">
+<script>
+  // Fake page engine: answers overlay requests with realistic mock data
+  const first = ['Ana','Bruno','Carla','Diego','Elena','Felipe','Gabriela','Hugo','Isabel','Javier','Laura','Mateo','Natalia','Óscar','Paula'];
+  const last = ['Pérez','Gómez','Rodríguez','López','Martínez','Díaz','Torres','Ramírez'];
+  const cc = ['57','52','34','54','1'];
+  const contacts = Array.from({ length: 640 }, (_, i) => {
+    const code = cc[i % cc.length];
+    // Obviously fake, zero-padded numbers: the captures end up in public promo material
+    const num = code + (code === '34' ? '60000' : '300000') + String(i).padStart(4, '0');
+    const named = i % 4 !== 0;
+    return {
+      id: `${num}@c.us`, cleanPhone: num, phone: `+${num}`,
+      name: named ? `${first[i % first.length]} ${last[i % last.length]}` : '',
+      savedName: i % 3 === 0 ? `${first[i % first.length]} ${last[i % last.length]}` : '',
+      pushName: named ? first[i % first.length] : '',
+      country: ['Colombia','México','España','Argentina','Estados Unidos / Canadá'][i % 5],
+      isMyContact: i % 3 === 0, isAdmin: i % 17 === 0, isBusiness: i % 11 === 0,
+      source: 'Grupo', sourceName: 'Equipo Ventas LATAM'
+    };
+  });
+  const groups = [
+    ['Equipo Ventas LATAM', 640, false], ['Familia López', 23, false], ['Familia', 12, true],
+    ['Comunidad JavaScript Bogotá', 512, false], ['Padres 5to grado', 41, false], ['Fútbol martes 🏟️', 18, true],
+    ['Proveedores 2026', 0, false], ['Viaje Cartagena', 9, false], ['Condominio Torre B', 87, false]
+  ].map(([title, participantCount, isArchived], i) => ({ id: `1203630${i}@g.us`, title, participantCount, isArchived }));
+  const labels = [
+    { id: '1', name: 'Nuevo cliente', color: '#53bdeb', count: 34 },
+    { id: '2', name: 'Pago pendiente', color: '#ffd279', count: 12 },
+    { id: '3', name: 'Pedido completado', color: '#25d366', count: 87 }
+  ];
+  window.addEventListener('message', (e) => {
+    if (!e.data || e.data.type !== 'WA_EXTRACTOR_REQUEST') return;
+    const a = e.data.action;
+    if (a === 'EXTRACT_GROUP' && e.data.payload.groupId === groups[6].id) {
+      setTimeout(() => window.postMessage({ type: 'WA_EXTRACTOR_RESPONSE', requestId: e.data.requestId, success: false, error: 'Este grupo aún no tiene participantes cargados en memoria. Por favor abre el chat del grupo en WhatsApp Web y vuelve a hacer clic en Extraer.' }, window.location.origin), 300);
+      return;
+    }
+    const data = a === 'GET_OVERVIEW' ? { groups, labels, totalContacts: 640, totalGroups: groups.length }
+      : a === 'EXTRACT_GROUP' ? { groupTitle: groups.find(g => g.id === e.data.payload.groupId).title, total: contacts.length, contacts }
+      : a === 'EXTRACT_LABEL' ? { labelName: 'Nuevo cliente', total: 34, contacts: contacts.slice(0, 34) }
+      : { filter: 'all', total: contacts.length, contacts };
+    setTimeout(() => window.postMessage({ type: 'WA_EXTRACTOR_RESPONSE', requestId: e.data.requestId, success: true, data }, window.location.origin), 300);
+  });
+  window.__downloads = [];
+  URL.createObjectURL = (blob) => { window.__downloads.push(blob); return 'blob:fake'; };
+</script>
+<script src="../dist/overlay.js"></script>
+<script>window.WAExtractorUI.init();</script>
+</body></html>

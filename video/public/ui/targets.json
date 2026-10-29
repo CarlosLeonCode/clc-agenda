@@ -1,0 +1,24 @@
+{
+  "modal": {
+    "width": 760,
+    "height": 680
+  },
+  "groupRow": {
+    "x": 1,
+    "y": 164,
+    "width": 758,
+    "height": 48
+  },
+  "unsavedChip": {
+    "x": 260.71875,
+    "y": 123,
+    "width": 122.953125,
+    "height": 30
+  },
+  "googleButton": {
+    "x": 607.515625,
+    "y": 633,
+    "width": 135.484375,
+    "height": 34
+  }
+}

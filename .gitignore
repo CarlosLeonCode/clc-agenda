@@ -39,3 +39,6 @@ tools/
 
 # Build output
 dist/
+
+# Promo video renders
+video/out/
