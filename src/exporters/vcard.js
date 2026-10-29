@@ -2,6 +2,8 @@
  * vCard 3.0 Exporter for phone address books
  */
 
+import { splitDisplayName } from './normalize.js';
+
 export function escapeVCardValue(value) {
   if (value === null || value === undefined) return '';
   return String(value)
@@ -22,17 +24,22 @@ export function exportToVCard(contacts = [], options = {}) {
     const phone = c.phone || (c.cleanPhone ? `+${c.cleanPhone}` : '');
 
     let name = includeName ? (c.name || c.savedName || c.pushName || '').trim() : '';
-    if (!name && phone) {
-      name = `WA ${phone}`;
-    } else if (!name) {
-      name = 'Contacto WhatsApp';
+    // N is Family;Given;Additional;Prefix;Suffix. Placeholders stay whole in Given.
+    let family = '';
+    let given = name;
+    if (name) {
+      ({ firstName: given, lastName: family } = splitDisplayName(name));
+    } else if (phone) {
+      name = given = `WA ${phone}`;
+    } else {
+      name = given = 'Contacto WhatsApp';
     }
 
     const lines = [
       'BEGIN:VCARD',
       'VERSION:3.0',
       `FN:${escapeVCardValue(name)}`,
-      `N:${escapeVCardValue(name)};;;;`
+      `N:${escapeVCardValue(family)};${escapeVCardValue(given)};;;`
     ];
 
     if (includePhone && phone) {

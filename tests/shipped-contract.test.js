@@ -93,7 +93,8 @@ test('Shipped contract: vCard cards for every field', () => {
     'BEGIN:VCARD',
     'VERSION:3.0',
     'FN:Ana Sofía Pérez',
-    'N:Ana Sofía Pérez;;;;',
+    // Intentional change from the original contract: N is Family;Given;;;
+    'N:Pérez;Ana Sofía;;;',
     'TEL;TYPE=CELL,VOICE:+573001234567',
     'ORG:Empresa WhatsApp',
     'CATEGORIES:Clientes VIP,Admin,Colombia',
@@ -102,7 +103,7 @@ test('Shipped contract: vCard cards for every field', () => {
     'BEGIN:VCARD',
     'VERSION:3.0',
     'FN:WA +5491198765432',
-    'N:WA +5491198765432;;;;',
+    'N:;WA +5491198765432;;;',
     'TEL;TYPE=CELL,VOICE:+5491198765432',
     'CATEGORIES:Argentina',
     'END:VCARD'

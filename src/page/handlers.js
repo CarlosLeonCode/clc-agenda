@@ -1,5 +1,6 @@
 import { cleanPhoneNumber } from '../core/phone.js';
 import { extractParticipantsList, getGroupParticipantCount } from '../core/groups.js';
+import { labelTargets } from '../core/labels.js';
 import { initWebpackStore, store } from './webpack-store.js';
 import { scanAllIndexedDB, collectGroupAuthors } from './scan.js';
 import { buildResolvedContact, findActiveOpenGroup } from './resolver.js';
@@ -140,14 +141,7 @@ export async function handleExtractLabel(labelId, onProgress = () => {}) {
   const labelObj = data.labels.get(String(labelId));
   const labelName = labelObj ? labelObj.name : `Etiqueta ${labelId}`;
 
-  const matchedIds = new Set();
-  for (const assoc of data.labelAssociations) {
-    const assocLabelId = String(assoc.labelId || assoc.label_id || assoc.id || '');
-    if (assocLabelId === String(labelId)) {
-      const targetId = assoc.chatId || assoc.chatJid || assoc.contactId || assoc.contactJid || assoc.associationId || assoc.parentJid;
-      if (targetId) matchedIds.add(String(targetId));
-    }
-  }
+  const matchedIds = labelTargets(data.labelAssociations, labelId);
 
   const results = [];
   const seenPhones = new Set();
@@ -269,7 +263,7 @@ export async function handleGetOverview(onProgress = () => {}) {
   const labelsList = [];
   for (const [id, l] of data.labels.entries()) {
     const name = l.name || `Etiqueta #${id}`;
-    const count = data.labelAssociations.filter(a => String(a.labelId || a.id) === String(id)).length;
+    const count = labelTargets(data.labelAssociations, id).size;
     labelsList.push({
       id: id,
       name: name,
