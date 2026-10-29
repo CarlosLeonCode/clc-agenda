@@ -10,6 +10,7 @@ import { exportToVCard } from '../exporters/vcard.js';
 import { exportToGoogleContactsCSV } from '../exporters/google-contacts.js';
 import { exportToJSON } from '../exporters/json.js';
 import { clampLauncherPosition } from './launcher-position.js';
+import { PAGE_SIZE, contactKey, filterContacts, getExportList, setSelectionFor, areAllSelected, paginate } from './selection.js';
 
 let overviewData = null;
 let activeTab = 'groups';
@@ -19,6 +20,7 @@ let currentGroupFilter = 'all';
 let extractedContacts = [];
 let selectedContactIds = new Set();
 let searchTerm = '';
+let visibleLimit = PAGE_SIZE;
 let groupSearchTerm = '';
 
 // Dynamic table cell renderers per field
@@ -686,6 +688,7 @@ function attachEventListeners() {
   // Results Search Input
   document.getElementById('wae-search-input').addEventListener('input', (e) => {
     searchTerm = e.target.value.toLowerCase().trim();
+    visibleLimit = PAGE_SIZE;
     renderTable();
   });
 
@@ -836,7 +839,8 @@ async function handleExtractChatsClick() {
 
 function setExtractedResults(contacts, sourceDescription) {
   extractedContacts = contacts || [];
-  selectedContactIds = new Set(extractedContacts.map(c => c.cleanPhone || c.id));
+  selectedContactIds = new Set(extractedContacts.map(contactKey));
+  visibleLimit = PAGE_SIZE;
 
   const resultsSection = document.getElementById('wae-results-section');
   resultsSection.style.display = 'flex';
@@ -865,8 +869,12 @@ function renderTable() {
 
   const activeFields = getActiveOrderedFields();
 
-  // 1. Render Dynamic <thead> based on active fields
-  const allSelected = extractedContacts.length > 0 && selectedContactIds.size === extractedContacts.length;
+  // 1. Filter data; select-all acts on every contact matching the search
+  const filtered = filterContacts(extractedContacts, searchTerm);
+  const { rows, hiddenCount } = paginate(filtered, visibleLimit);
+
+  // 2. Render Dynamic <thead> based on active fields
+  const allSelected = areAllSelected(selectedContactIds, filtered);
   thead.innerHTML = `
     <tr>
       <th style="width: 38px;">
@@ -880,28 +888,12 @@ function renderTable() {
   const selectAllInput = document.getElementById('wae-select-all');
   if (selectAllInput) {
     selectAllInput.addEventListener('change', (e) => {
-      const isChecked = e.target.checked;
-      if (isChecked) {
-        extractedContacts.forEach(c => selectedContactIds.add(c.cleanPhone || c.id));
-      } else {
-        selectedContactIds.clear();
-      }
+      selectedContactIds = setSelectionFor(selectedContactIds, filtered, e.target.checked);
       renderTable();
     });
   }
 
-  // 2. Filter data
-  const filtered = extractedContacts.filter(c => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    const name = (c.name || c.savedName || c.pushName || '').toLowerCase();
-    const phone = (c.phone || c.cleanPhone || '').toLowerCase();
-    const country = (c.country || '').toLowerCase();
-    const source = (c.sourceName || '').toLowerCase();
-    return name.includes(term) || phone.includes(term) || country.includes(term) || source.includes(term);
-  });
-
-  statsText.innerHTML = `Mostrando <strong>${filtered.length}</strong> de ${extractedContacts.length} contactos`;
+  statsText.innerHTML = `Mostrando <strong>${rows.length}</strong> de ${extractedContacts.length} contactos`;
   selectionCount.textContent = `${selectedContactIds.size} seleccionados de ${extractedContacts.length} totales`;
 
   const totalCols = activeFields.length + 2;
@@ -912,8 +904,12 @@ function renderTable() {
   }
 
   // 3. Render Dynamic <tbody> rows
-  tbody.innerHTML = filtered.slice(0, 400).map(c => {
-    const id = c.cleanPhone || c.id;
+  const loadMoreRow = hiddenCount > 0
+    ? `<tr><td colspan="${totalCols}" style="text-align:center; padding: 14px;"><button type="button" class="wae-pill-btn" id="wae-btn-load-more">Mostrar ${Math.min(PAGE_SIZE, hiddenCount)} más (quedan ${hiddenCount})</button></td></tr>`
+    : '';
+
+  tbody.innerHTML = rows.map(c => {
+    const id = contactKey(c);
     const isSelected = selectedContactIds.has(id);
     const quickPhone = c.phone || (c.cleanPhone ? `+${c.cleanPhone}` : '');
 
@@ -930,7 +926,15 @@ function renderTable() {
         </td>
       </tr>
     `;
-  }).join('');
+  }).join('') + loadMoreRow;
+
+  const loadMoreBtn = document.getElementById('wae-btn-load-more');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', () => {
+      visibleLimit += PAGE_SIZE;
+      renderTable();
+    });
+  }
 
   tbody.querySelectorAll('.wae-row-check').forEach(chk => {
     chk.addEventListener('change', (e) => {
@@ -942,7 +946,7 @@ function renderTable() {
       }
       selectionCount.textContent = `${selectedContactIds.size} seleccionados de ${extractedContacts.length} totales`;
       if (selectAllInput) {
-        selectAllInput.checked = selectedContactIds.size === extractedContacts.length;
+        selectAllInput.checked = areAllSelected(selectedContactIds, filtered);
       }
     });
   });
@@ -961,10 +965,7 @@ function renderTable() {
 }
 
 function getSelectedContactsList() {
-  if (selectedContactIds.size === 0) {
-    return extractedContacts;
-  }
-  return extractedContacts.filter(c => selectedContactIds.has(c.cleanPhone || c.id));
+  return getExportList(extractedContacts, selectedContactIds);
 }
 
 function exportData(type) {
