@@ -1,0 +1,16 @@
+---
+import { FAQ } from '../data/site.js';
+---
+<section id="preguntas" class="section" aria-labelledby="faq-title">
+  <div class="wrap faq-grid">
+    <h2 id="faq-title" class="section-title" data-reveal>Preguntas frecuentes</h2>
+    <div class="faq">
+      {FAQ.map(({ q, a }) => (
+        <details class="faq-item" data-faq>
+          <summary>{q}</summary>
+          <p>{a}</p>
+        </details>
+      ))}
+    </div>
+  </div>
+</section>

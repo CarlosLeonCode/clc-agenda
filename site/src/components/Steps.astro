@@ -1,0 +1,23 @@
+---
+const steps = [
+  { n: 1, title: 'Elige de dónde', text: 'Un grupo, una etiqueta de WhatsApp Business, tus chats o todos tus contactos.', bg: 'var(--yellow)' },
+  { n: 2, title: 'Revisa quién falta', text: 'Ve quién ya está en tu agenda y filtra con un clic a los que no tienes guardados.', bg: 'var(--sky)' },
+  { n: 3, title: 'Guárdalos', text: 'Un archivo listo para Google Contacts o para la agenda de tu celular.', bg: 'var(--green)' }
+];
+---
+<section id="como-funciona" class="section" aria-labelledby="steps-title">
+  <div class="wrap">
+    <h2 id="steps-title" class="section-title" data-reveal>Tres clics.<br />Cero copiar y pegar.</h2>
+    <ol class="steps">
+      {steps.map(s => (
+        <li class="step" style={`background:${s.bg}`} data-step>
+          <span class="step-n" aria-hidden="true">{s.n}</span>
+          <div>
+            <h3>{s.title}</h3>
+            <p>{s.text}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>

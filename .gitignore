@@ -42,3 +42,7 @@ dist/
 
 # Promo video renders
 video/out/
+
+# Landing build output
+site/dist/
+site/.astro/

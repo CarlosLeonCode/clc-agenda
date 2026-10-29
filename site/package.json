@@ -1,0 +1,20 @@
+{
+  "name": "clc-agenda-site",
+  "version": "1.3.0",
+  "private": true,
+  "type": "module",
+  "description": "Landing page for CLC Agenda, built with Astro and GSAP.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "og": "node scripts/og-image.mjs",
+    "test": "astro build && node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "5.3.0",
+    "@fontsource/bricolage-grotesque": "5.3.0",
+    "astro": "7.4.4",
+    "gsap": "3.15.0"
+  }
+}

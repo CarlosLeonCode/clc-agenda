@@ -1,0 +1,12 @@
+---
+const items = ['Grupos', 'Chats', 'Etiquetas', 'Google Contacts', 'Celular', 'Excel', 'JSON'];
+---
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track" data-marquee>
+    {[0, 1].map(() => (
+      <div class="marquee-group">
+        {items.map(item => (<span>{item}<b>●</b></span>))}
+      </div>
+    ))}
+  </div>
+</div>

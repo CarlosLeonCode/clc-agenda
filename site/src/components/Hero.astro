@@ -1,0 +1,54 @@
+---
+import { Image } from 'astro:assets';
+import shot from '../assets/results-unsaved.png';
+import { INSTALL_URL } from '../data/site.js';
+
+// Named cursors: people from your groups, drifting toward your address book
+const cursors = [
+  { name: 'Ana · Ventas', color: 'var(--coral)', ink: true, cls: 'cursor-a' },
+  { name: 'Bruno · Comunidad', color: 'var(--violet-strong)', ink: false, cls: 'cursor-b' },
+  { name: 'Tú', color: 'var(--sky)', ink: true, cls: 'cursor-c' }
+];
+---
+<section class="hero" aria-labelledby="hero-title">
+  <div class="wrap hero-copy">
+    {cursors.map(c => (
+      <div class={`cursor ${c.cls}`} aria-hidden="true" data-cursor>
+        <svg viewBox="0 0 24 24" width="26" height="26"><path d="M3 2l7 19 2.5-8L21 10z" fill={c.color} stroke="#fff" stroke-width="1.5" /></svg>
+        <span style={`background:${c.color};color:${c.ink ? 'var(--ink)' : '#fff'}`}>{c.name}</span>
+      </div>
+    ))}
+    <h1 id="hero-title" class="hero-title">
+      <span class="line" data-line>Tu agenda,</span>
+      <span class="line" data-line><span class="hl hl-violet" data-hl>fuera</span> de <span class="hl hl-coral" data-hl>WhatsApp.</span></span>
+    </h1>
+    <p class="lead" data-fade>Grupos, chats y etiquetas de WhatsApp Web, directo a Google Contacts o a tu celular. Sin copiar número por número.</p>
+    <div class="cta-row" data-fade>
+      <a class="btn" href={INSTALL_URL}>Instalar la extensión</a>
+      <a class="btn btn-alt" href="#como-funciona">Ver cómo funciona</a>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="canvas" data-canvas>
+      <div class="shape shape-yellow" aria-hidden="true" data-shape></div>
+      <div class="shape shape-sky" aria-hidden="true" data-shape></div>
+      <div class="shape shape-green" aria-hidden="true" data-shape></div>
+      <div class="shot" data-shot>
+        <Image
+          src={shot}
+          alt="Ventana de CLC Agenda sobre WhatsApp Web con el grupo Equipo Ventas LATAM filtrado en 426 contactos sin guardar y los botones para exportar a Google Contacts o al celular."
+          width={760}
+          format="webp"
+          quality={82}
+          loading="eager"
+          fetchpriority="high"
+        />
+        <span class="click-ripple" aria-hidden="true" data-ripple></span>
+      </div>
+      <div class="chip chip-1" aria-hidden="true" data-chip>+57 300 000 0000</div>
+      <div class="chip chip-2" aria-hidden="true" data-chip>+52 55 0000 0000</div>
+      <div class="chip chip-3" aria-hidden="true" data-chip><b>426</b> sin guardar</div>
+    </div>
+  </div>
+</section>
