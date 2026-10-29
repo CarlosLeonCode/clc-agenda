@@ -1,4 +1,6 @@
-import { normalizeContact } from './normalize.js';
+/**
+ * vCard 3.0 Exporter for phone address books
+ */
 
 export function escapeVCardValue(value) {
   if (value === null || value === undefined) return '';
@@ -11,51 +13,47 @@ export function escapeVCardValue(value) {
 
 export function exportToVCard(contacts = [], options = {}) {
   const selectedFields = options.fields || ['name', 'phone'];
-  const includePhone = selectedFields.includes('phone') || selectedFields.includes('cleanPhone');
   const includeName = selectedFields.includes('name');
-  const includeOrg = selectedFields.includes('isBusiness') || selectedFields.includes('sourceName');
-  const includeNote = selectedFields.includes('source') || selectedFields.includes('sourceName') || selectedFields.includes('country');
+  const includePhone = selectedFields.includes('phone') || selectedFields.includes('cleanPhone');
+  const includeOrg = selectedFields.includes('isBusiness');
+  const includeNote = selectedFields.includes('sourceName') || selectedFields.includes('country');
 
   const cards = contacts.map(c => {
-    const normalized = normalizeContact(c);
-    const phoneWithPlus = normalized.phone;
+    const phone = c.phone || (c.cleanPhone ? `+${c.cleanPhone}` : '');
 
-    let displayName = '';
-    if (includeName) {
-      displayName = normalized.displayName;
-    }
-    if (!displayName && phoneWithPlus) {
-      displayName = `WA ${phoneWithPlus}`;
-    } else if (!displayName) {
-      displayName = 'Contacto WhatsApp';
+    let name = includeName ? (c.name || c.savedName || c.pushName || '').trim() : '';
+    if (!name && phone) {
+      name = `WA ${phone}`;
+    } else if (!name) {
+      name = 'Contacto WhatsApp';
     }
 
     const lines = [
       'BEGIN:VCARD',
       'VERSION:3.0',
-      `FN:${escapeVCardValue(displayName)}`,
-      `N:${escapeVCardValue(displayName)};;;;`
+      `FN:${escapeVCardValue(name)}`,
+      `N:${escapeVCardValue(name)};;;;`
     ];
 
-    if (includePhone && normalized.phone) {
-      lines.push(`TEL;TYPE=CELL,VOICE:${phoneWithPlus}`);
+    if (includePhone && phone) {
+      lines.push(`TEL;TYPE=CELL,VOICE:${phone}`);
     }
 
-    if (includeOrg && normalized.organization) {
-      lines.push(`ORG:${escapeVCardValue(normalized.organization)}`);
+    if (includeOrg && c.isBusiness) {
+      lines.push('ORG:Empresa WhatsApp');
     }
 
     const categories = [];
-    if (c.sourceName && selectedFields.includes('sourceName')) categories.push(c.sourceName);
-    if (c.isAdmin && selectedFields.includes('isAdmin')) categories.push('Admin');
-    if (c.country && selectedFields.includes('country')) categories.push(c.country);
+    if (selectedFields.includes('sourceName') && c.sourceName) categories.push(c.sourceName);
+    if (selectedFields.includes('isAdmin') && c.isAdmin) categories.push('Admin');
+    if (selectedFields.includes('country') && c.country) categories.push(c.country);
 
     if (categories.length > 0) {
       lines.push(`CATEGORIES:${categories.map(escapeVCardValue).join(',')}`);
     }
 
-    if (includeNote && normalized.note) {
-      lines.push(`NOTE:${escapeVCardValue(normalized.note)}`);
+    if (includeNote && c.sourceName) {
+      lines.push(`NOTE:Extraído de: ${escapeVCardValue(c.sourceName)}`);
     }
 
     lines.push('END:VCARD');

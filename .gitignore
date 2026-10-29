@@ -35,3 +35,6 @@ openspec/
 src/yaml.js
 start/
 tools/
+
+# Build output
+dist/

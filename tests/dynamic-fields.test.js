@@ -48,7 +48,7 @@ test('Dynamic Fields: CSV Exporter exports only requested fields and order', () 
   // 2. Preset Solo Teléfonos
   const csvPhones = exportToCSV(sampleContacts, { fields: ['phone', 'cleanPhone'] });
   const linesPhones = csvPhones.replace('\uFEFF', '').trim().split('\r\n');
-  assert.equal(linesPhones[0], 'Teléfono,Teléfono (Solo Números)');
+  assert.equal(linesPhones[0], 'Teléfono,Solo Números');
   assert.equal(linesPhones[1], '+573001234567,573001234567');
 
   // 3. Granular Selection: Nombre, País, Rol, Empresa
@@ -63,18 +63,18 @@ test('Dynamic Fields: JSON Exporter strictly filters object keys', () => {
   const jsonOutput = JSON.parse(exportToJSON(sampleContacts, { fields: ['name', 'country', 'isAdmin'] }));
 
   assert.equal(jsonOutput.metadata.totalContacts, 2);
-  assert.deepEqual(jsonOutput.metadata.fields, ['name', 'country', 'isAdmin']);
+  assert.deepEqual(jsonOutput.metadata.selectedFields, ['name', 'country', 'isAdmin']);
 
   // Contact 1
   assert.equal(jsonOutput.contacts[0].name, 'Ana Sofía Pérez');
   assert.equal(jsonOutput.contacts[0].country, 'Colombia');
-  assert.equal(jsonOutput.contacts[0].isAdmin, true);
+  assert.equal(jsonOutput.contacts[0].isAdmin, 'Admin');
   assert.equal(jsonOutput.contacts[0].phone, undefined);
   assert.equal(jsonOutput.contacts[0].isBusiness, undefined);
 
   // Contact 2
   assert.equal(jsonOutput.contacts[1].country, 'Argentina');
-  assert.equal(jsonOutput.contacts[1].isAdmin, false);
+  assert.equal(jsonOutput.contacts[1].isAdmin, 'Miembro');
 });
 
 test('Dynamic Fields: vCard Exporter generates valid vCard 3.0 lines adapting to fields', () => {

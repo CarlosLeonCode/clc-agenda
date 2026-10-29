@@ -32,11 +32,12 @@ Browser extension, Manifest V3. Works on Chrome, Brave, Edge, Opera, and Firefox
 
 Local install:
 
-1. Open `chrome://extensions` (or `brave://extensions` / `edge://extensions`).
-2. Turn on **Developer mode**.
-3. Click **Load unpacked** and select this folder.
-4. Reload WhatsApp Web.
+1. Run `npm install` and then `npm run build`. This bundles `src/` into `dist/`, which is what Chrome loads.
+2. Open `chrome://extensions` (or `brave://extensions` / `edge://extensions`).
+3. Turn on **Developer mode**.
+4. Click **Load unpacked** and select this folder.
+5. Reload WhatsApp Web.
 
-Tests: `npm test`.
+Tests: `npm test` (builds first). While developing, `npm run watch` rebuilds on every change.
 
-Exporters: `src/exporters/google-contacts.js`, `src/exporters/vcard.js`, `src/exporters/csv.js`, `src/exporters/json.js`. The window you see on WhatsApp is `content/overlay.js`.
+Exporters: `src/exporters/google-contacts.js`, `src/exporters/vcard.js`, `src/exporters/csv.js`, `src/exporters/json.js`. The window you see on WhatsApp is `src/ui/overlay.js`, and the engine that reads WhatsApp Web is `src/page/`.

@@ -16,9 +16,10 @@
 ## Entorno de Desarrollo (Development Environment)
 
 Para probar la extensión localmente mientras desarrollas:
-1. Abre Chrome (o Brave/Edge) y ve a `chrome://extensions/`.
-2. Activa el "Modo de desarrollador".
-3. Haz clic en "Cargar descomprimida" y selecciona la carpeta del proyecto.
-4. Cualquier cambio en `popup/` o `content/` va a requerir que refresques la extensión desde la página de extensiones y luego recargues WhatsApp Web.
+1. Ejecuta `npm install` y luego `npm run build` para generar `dist/`. Usa `npm run watch` para que se vuelva a compilar con cada cambio en `src/`.
+2. Abre Chrome (o Brave/Edge) y ve a `chrome://extensions/`.
+3. Activa el "Modo de desarrollador".
+4. Haz clic en "Cargar descomprimida" y selecciona la carpeta del proyecto.
+5. Cualquier cambio en `popup/`, `content/overlay.css` o `src/` (ya compilado) va a requerir que refresques la extensión desde la página de extensiones y luego recargues WhatsApp Web.
 
 Cualquier mejora es bienvenida. Abre un Issue si tienes dudas o encontraste un error.

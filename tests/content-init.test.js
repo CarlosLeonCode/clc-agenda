@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
+// Runs the bundled script (npm test builds dist/ first) exactly as Chrome loads it.
 test('content initialization keeps polling until the overlay API is available', () => {
-  const source = fs.readFileSync(new URL('../content/content.js', import.meta.url), 'utf8');
+  const source = fs.readFileSync(new URL('../dist/content.js', import.meta.url), 'utf8');
+  const createdElements = [];
   const intervals = new Map();
   let nextIntervalId = 1;
   const cleared = [];
@@ -26,7 +28,7 @@ test('content initialization keeps polling until the overlay API is available', 
       documentElement: { appendChild() {} },
       getElementById(id) { return id === 'app' ? {} : null; },
       querySelector() { return null; },
-      createElement() { return { set src(value) {}, onload: null, remove() {} }; }
+      createElement(tag) { createdElements.push(tag); return {}; }
     },
     chrome: {
       runtime: {
@@ -39,6 +41,8 @@ test('content initialization keeps polling until the overlay API is available', 
 
   vm.runInNewContext(source, context, { filename: 'content.js' });
   assert.equal(intervals.size, 1);
+  // The page engine is loaded by the manifest in the MAIN world, not by a <script> tag.
+  assert.deepEqual(createdElements, []);
   const check = intervals.values().next().value;
 
   // WhatsApp can finish loading before overlay.js has registered its API.

@@ -76,7 +76,7 @@ export function formatInternationalPhone(cleanNumber) {
   return `+${cleanNumber}`;
 }
 
-function sanitizeName(nameStr, phone) {
+export function sanitizeName(nameStr, phone) {
   if (!nameStr || typeof nameStr !== 'string') return '';
   let str = nameStr.trim();
   if (str.startsWith('~')) str = str.substring(1).trim();

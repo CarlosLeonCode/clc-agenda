@@ -4,7 +4,9 @@
   "description": "CLC Agenda: export WhatsApp Web contacts to Google Contacts, a phone address book, CSV, or JSON.",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/*.test.js",
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "test": "npm run build && node --test tests/*.test.js",
     "icons": "node generate-icons.js"
   },
   "keywords": [
@@ -16,5 +18,8 @@
     "contacts"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
 }
