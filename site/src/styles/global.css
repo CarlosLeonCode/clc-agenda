@@ -86,6 +86,8 @@ ul, ol { padding: 0; list-style: none; }
 /* Hero */
 .hero { position: relative; padding: 40px 0 24px; }
 .hero-copy { position: relative; text-align: center; }
+/* Keyword eyebrow: what people search, said plainly above the brand headline */
+.hero-eyebrow { font: 600 14px var(--body); color: var(--violet-strong); letter-spacing: .02em; margin-bottom: 14px; }
 .hero-title {
   font: 800 clamp(52px, 13vw, 124px)/0.92 var(--display);
   letter-spacing: -0.045em;

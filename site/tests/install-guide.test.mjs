@@ -31,7 +31,7 @@ const STEPS = [
 test('Install guide: the page exists with its own title, description and one h1', () => {
   assert.ok(html, 'dist/instalar/index.html is built');
   assert.match(html, /<html[^>]*lang="es"/);
-  assert.match(html, /<title>[^<]*Instalar[^<]*<\/title>/);
+  assert.match(html, /<title>[^<]*instalar[^<]*<\/title>/i);
   assert.match(html, /<meta name="description" content="[^"]{50,}"/);
   assert.equal((html.match(/<h1[\s>]/g) || []).length, 1);
   assert.match(html, /<main[\s>]/);

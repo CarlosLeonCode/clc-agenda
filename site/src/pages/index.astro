@@ -8,8 +8,9 @@ import Panels from '../components/Panels.astro';
 import Faq from '../components/Faq.astro';
 import FinalCta from '../components/FinalCta.astro';
 import Footer from '../components/Footer.astro';
+import { appNodes } from '../data/structured.js';
 ---
-<Base>
+<Base graph={appNodes(Astro.site)}>
   <Nav />
   <main id="contenido">
     <Hero />

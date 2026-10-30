@@ -1,7 +1,7 @@
 ---
 import { getImage } from 'astro:assets';
 import posterSrc from '../assets/hero-poster.png';
-import { INSTALL_URL, AUTHOR } from '../data/site.js';
+import { INSTALL_URL, AUTHOR, DEFINITION } from '../data/site.js';
 
 // Promo video (video/ project), re-encoded at 720p without audio for the web
 const poster = await getImage({ src: posterSrc, width: 1280, format: 'webp', quality: 80 });
@@ -22,11 +22,12 @@ const cursors = [
         <span style={`background:${c.color};color:${c.ink ? 'var(--ink)' : '#fff'}`}>{c.name}</span>
       </div>
     ))}
+    <p class="hero-eyebrow" data-fade>Exporta contactos de WhatsApp Web</p>
     <h1 id="hero-title" class="hero-title">
-      <span class="line" data-line>Tu agenda,</span>
+      <span class="line" data-line>Tu agenda,</span>{' '}
       <span class="line" data-line><span class="hl hl-violet" data-hl>fuera</span> de <span class="hl hl-coral" data-hl>WhatsApp.</span></span>
     </h1>
-    <p class="lead" data-fade>Grupos, chats y etiquetas de WhatsApp Web, directo a Google Contacts o a tu celular. Sin copiar número por número.</p>
+    <p class="lead" data-fade>{DEFINITION}</p>
     <div class="cta-row" data-fade>
       <a class="btn" href={INSTALL_URL}>Instalar la extensión</a>
       <a class="btn btn-alt" href="#como-funciona">Ver cómo funciona</a>

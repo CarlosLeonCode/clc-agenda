@@ -2,44 +2,24 @@
 import '@fontsource/bricolage-grotesque/latin-800.css';
 import '../styles/fonts.css';
 import '../styles/global.css';
-import { TITLE, DESCRIPTION, REPO, FAQ, AUTHOR } from '../data/site.js';
+import { TITLE, DESCRIPTION, OG_IMAGE_ALT } from '../data/site.js';
+import { pageNodes } from '../data/structured.js';
 // Same files the @font-face rules use: preloading them means the hero paints with
 // the real fonts instead of swapping (and re-wrapping the headline) mid-intro
 import displayFont from '@fontsource/bricolage-grotesque/files/bricolage-grotesque-latin-800-normal.woff2?url';
 import bodyFont from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
 
-// Pages other than home pass their own title, description and path; the app's
-// structured data (and its FAQ) only belongs on the home page
-const { title = TITLE, description = DESCRIPTION, path = '/', structuredData = true } = Astro.props;
+// Each page passes its title, description, path and its own JSON-LD nodes (`graph`);
+// WebSite + WebPage are added here. `noindex` pages (404) get no structured data.
+const { title = TITLE, description = DESCRIPTION, path = '/', graph = [], noindex = false } = Astro.props;
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const pageUrl = new URL(`${base}${path}`, Astro.site).href;
 const ogImage = new URL(`${base}/og.png`, Astro.site).href;
 
-const jsonLd = {
+const jsonLd = noindex ? null : {
   '@context': 'https://schema.org',
-  '@graph': [
-    {
-      '@type': 'SoftwareApplication',
-      name: 'CLC Agenda',
-      description: DESCRIPTION,
-      applicationCategory: 'BrowserApplication',
-      operatingSystem: 'Chrome, Brave, Edge, Opera (Chromium 111+)',
-      url: pageUrl,
-      codeRepository: REPO,
-      author: { '@type': 'Person', name: AUTHOR.name, url: AUTHOR.url },
-      license: 'https://opensource.org/licenses/MIT',
-      inLanguage: 'es'
-    },
-    {
-      '@type': 'FAQPage',
-      mainEntity: FAQ.map(({ q, a }) => ({
-        '@type': 'Question',
-        name: q,
-        acceptedAnswer: { '@type': 'Answer', text: a }
-      }))
-    }
-  ]
+  '@graph': [...pageNodes(Astro.site, { url: pageUrl, title, description }), ...graph]
 };
 ---
 <!doctype html>
@@ -51,9 +31,10 @@ const jsonLd = {
     <link rel="preload" href={bodyFont} as="font" type="font/woff2" crossorigin />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={pageUrl} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={pageUrl} />}
     <link rel="icon" type="image/png" sizes="128x128" href={`${base}/favicon.png`} />
     <link rel="icon" type="image/png" sizes="48x48" href={`${base}/favicon-48.png`} />
+    <link rel="apple-touch-icon" sizes="180x180" href={`${base}/apple-touch-icon.png`} />
     <meta name="theme-color" content="#FFFFFF" />
 
     <meta property="og:type" content="website" />
@@ -64,12 +45,14 @@ const jsonLd = {
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={OG_IMAGE_ALT} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={OG_IMAGE_ALT} />
 
-    {structuredData && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
   </head>
   <body>
     <a class="skip" href="#contenido">Saltar al contenido</a>

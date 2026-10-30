@@ -1,0 +1,25 @@
+---
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+---
+<Base title="Página no encontrada | CLC Agenda" description="Esta página no existe. Vuelve al inicio o sigue la guía de instalación." path="/404" noindex>
+  <Nav />
+  <main id="contenido" class="not-found wrap">
+    <p class="not-found-code">404</p>
+    <h1 class="not-found-title">Esta página no existe</h1>
+    <p class="not-found-lead">Puede que el enlace esté mal escrito o que la página ya no esté. Sigue desde aquí:</p>
+    <div class="cta-row">
+      <a class="btn" href="/">Ir al inicio</a>
+      <a class="btn btn-alt" href="/instalar">Guía de instalación</a>
+    </div>
+  </main>
+  <Footer />
+</Base>
+
+<style>
+  .not-found { text-align: center; padding: 96px 0 120px; }
+  .not-found-code { font: 800 clamp(64px, 14vw, 140px)/0.9 var(--display); color: var(--violet-strong); letter-spacing: -0.05em; }
+  .not-found-title { font: 800 clamp(32px, 6vw, 56px)/1 var(--display); letter-spacing: -0.04em; margin-top: 18px; }
+  .not-found-lead { color: var(--muted); max-width: 520px; margin: 18px auto 28px; }
+</style>

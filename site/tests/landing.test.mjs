@@ -225,5 +225,5 @@ test('hero: credits carlosleoncode with a link to his site', () => {
 test('structured data: the app names carlosleoncode as its author', () => {
   const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => JSON.parse(m[1]));
   const app = blocks.flatMap(b => b['@graph'] || [b]).find(n => n['@type'] === 'SoftwareApplication');
-  assert.deepEqual(app.author, { '@type': 'Person', name: 'carlosleoncode', url: `${AUTHOR_URL}/` });
+  assert.deepEqual(app.author, { '@type': 'Person', name: 'carlosleoncode', url: `${AUTHOR_URL}/`, sameAs: [`${AUTHOR_URL}/`, 'https://github.com/CarlosLeonCode'] });
 });

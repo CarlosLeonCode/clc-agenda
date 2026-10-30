@@ -2,13 +2,14 @@
 import Base from '../layouts/Base.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
-import { DOWNLOAD_URL } from '../data/site.js';
+import { DOWNLOAD_URL, INSTALL_STEPS } from '../data/site.js';
+import { installNodes } from '../data/structured.js';
 
-const TITLE = 'Instalar CLC Agenda · Guía paso a paso';
+const TITLE = 'Cómo instalar CLC Agenda en Chrome paso a paso';
 const DESCRIPTION = 'Instala CLC Agenda en tu navegador en 7 pasos simples, sin saber de tecnología: descarga, descomprime y carga la extensión en Chrome, Brave, Edge u Opera.';
 const EXTENSIONS_URL = 'chrome://extensions';
 ---
-<Base title={TITLE} description={DESCRIPTION} path="/instalar" structuredData={false}>
+<Base title={TITLE} description={DESCRIPTION} path="/instalar" graph={installNodes(Astro.site)}>
   <Nav />
   <main id="contenido" class="guide">
     <header class="guide-head wrap">
@@ -18,10 +19,10 @@ const EXTENSIONS_URL = 'chrome://extensions';
     </header>
 
     <ol class="steps-guide wrap">
-      <li class="step-card">
+      <li class="step-card" id="paso-1">
         <div class="step-text">
           <span class="step-num" aria-hidden="true">1</span>
-          <h2>Descarga el archivo</h2>
+          <h2>{INSTALL_STEPS[0].name}</h2>
           <p>Toca el botón. Se descarga un archivo llamado <strong>clc-agenda.zip</strong>, normalmente en tu carpeta Descargas.</p>
           <a class="btn download-btn" href={DOWNLOAD_URL}>Descargar CLC Agenda</a>
           <p class="hint">Archivo .zip de unos 35 KB. Siempre es la última versión.</p>
@@ -37,10 +38,10 @@ const EXTENSIONS_URL = 'chrome://extensions';
         </div>
       </li>
 
-      <li class="step-card">
+      <li class="step-card" id="paso-2">
         <div class="step-text">
           <span class="step-num" aria-hidden="true">2</span>
-          <h2>Descomprímelo y guarda la carpeta</h2>
+          <h2>{INSTALL_STEPS[1].name}</h2>
           <p><strong>En Windows:</strong> haz clic derecho sobre el archivo y elige «Extraer todo». <strong>En Mac:</strong> haz doble clic.</p>
           <p>Aparece una carpeta llamada <strong>clc-agenda</strong>. Muévela a un lugar donde no la vayas a borrar, como Documentos: el navegador la usa mientras la extensión esté instalada.</p>
         </div>
@@ -59,10 +60,10 @@ const EXTENSIONS_URL = 'chrome://extensions';
         </div>
       </li>
 
-      <li class="step-card">
+      <li class="step-card" id="paso-3">
         <div class="step-text">
           <span class="step-num" aria-hidden="true">3</span>
-          <h2>Abre la página de extensiones</h2>
+          <h2>{INSTALL_STEPS[2].name}</h2>
           <p>Copia esta dirección, pégala en la barra de direcciones del navegador y presiona Enter. Hay que escribirla o pegarla: el navegador no deja abrirla desde un enlace.</p>
           <div class="copy-row">
             <code data-copy-source>{EXTENSIONS_URL}</code>
@@ -79,10 +80,10 @@ const EXTENSIONS_URL = 'chrome://extensions';
         </div>
       </li>
 
-      <li class="step-card">
+      <li class="step-card" id="paso-4">
         <div class="step-text">
           <span class="step-num" aria-hidden="true">4</span>
-          <h2>Activa el «Modo de desarrollador»</h2>
+          <h2>{INSTALL_STEPS[3].name}</h2>
           <p>Arriba a la derecha de esa página hay un interruptor con ese nombre. Actívalo: aparecen tres botones nuevos.</p>
         </div>
         <div class="illo" aria-hidden="true">
@@ -93,10 +94,10 @@ const EXTENSIONS_URL = 'chrome://extensions';
         </div>
       </li>
 
-      <li class="step-card">
+      <li class="step-card" id="paso-5">
         <div class="step-text">
           <span class="step-num" aria-hidden="true">5</span>
-          <h2>Toca «Cargar descomprimida»</h2>
+          <h2>{INSTALL_STEPS[4].name}</h2>
           <p>Es el primer botón de la izquierda. Se abre una ventana: elige la carpeta <strong>clc-agenda</strong> que guardaste en el paso 2 y confirma.</p>
           <p class="hint">Si tu navegador está en inglés, el botón dice «Load unpacked».</p>
         </div>
@@ -108,10 +109,10 @@ const EXTENSIONS_URL = 'chrome://extensions';
         </div>
       </li>
 
-      <li class="step-card">
+      <li class="step-card" id="paso-6">
         <div class="step-text">
           <span class="step-num" aria-hidden="true">6</span>
-          <h2>Fija el ícono en la barra</h2>
+          <h2>{INSTALL_STEPS[5].name}</h2>
           <p>Toca el ícono de la pieza de rompecabezas, arriba a la derecha, y luego el pin junto a CLC Agenda. Así siempre lo tienes a mano.</p>
         </div>
         <div class="illo" aria-hidden="true">
@@ -126,10 +127,10 @@ const EXTENSIONS_URL = 'chrome://extensions';
         </div>
       </li>
 
-      <li class="step-card">
+      <li class="step-card" id="paso-7">
         <div class="step-text">
           <span class="step-num" aria-hidden="true">7</span>
-          <h2>Abre WhatsApp Web</h2>
+          <h2>{INSTALL_STEPS[6].name}</h2>
           <p>Entra a <strong>web.whatsapp.com</strong> e inicia sesión como siempre. Abajo a la derecha aparece el botón «Extraer contactos». Listo: ya puedes guardar tus contactos.</p>
         </div>
         <div class="illo" aria-hidden="true">
