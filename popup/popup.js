@@ -1,8 +1,30 @@
 /**
  * CLC Agenda - Popup Controller
+ * Copy comes from _locales through chrome.i18n, so it follows the browser language.
  */
 
+const msg = (key) => chrome.i18n.getMessage(key) || key;
+
+function localize() {
+  document.documentElement.lang = chrome.i18n.getUILanguage();
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = msg(el.getAttribute('data-i18n'));
+  });
+  document.getElementById('version').textContent = `v${chrome.runtime.getManifest().version}`;
+}
+
+function showGoToWhatsApp(statusDot, statusText, btnAction, statusKey) {
+  statusDot.className = 'status-indicator inactive';
+  statusText.textContent = msg(statusKey);
+  btnAction.textContent = msg('popupGoTo');
+  btnAction.addEventListener('click', async () => {
+    await chrome.tabs.create({ url: 'https://web.whatsapp.com' });
+    window.close();
+  });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+  localize();
   const statusDot = document.getElementById('status-dot');
   const statusText = document.getElementById('status-text');
   const btnAction = document.getElementById('btn-action');
@@ -14,32 +36,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (isWhatsAppWeb) {
       statusDot.className = 'status-indicator active';
-      statusText.textContent = 'WhatsApp Web detectado y listo';
-      btnAction.textContent = 'Abrir en WhatsApp Web';
+      statusText.textContent = msg('popupReady');
+      btnAction.textContent = msg('popupOpen');
       btnAction.addEventListener('click', async () => {
         try {
           await chrome.tabs.sendMessage(activeTab.id, { action: 'OPEN_EXTRACTOR' });
           window.close();
         } catch (err) {
-          statusText.textContent = 'Recarga la pestaña de WhatsApp';
+          statusText.textContent = msg('popupReload');
         }
       });
     } else {
-      statusDot.className = 'status-indicator inactive';
-      statusText.textContent = 'No estás en WhatsApp Web';
-      btnAction.textContent = 'Ir a WhatsApp Web';
-      btnAction.addEventListener('click', async () => {
-        await chrome.tabs.create({ url: 'https://web.whatsapp.com' });
-        window.close();
-      });
+      showGoToWhatsApp(statusDot, statusText, btnAction, 'popupNotOnWhatsApp');
     }
   } catch (err) {
-    statusDot.className = 'status-indicator inactive';
-    statusText.textContent = 'Error al detectar pestaña';
-    btnAction.textContent = 'Ir a WhatsApp Web';
-    btnAction.addEventListener('click', async () => {
-      await chrome.tabs.create({ url: 'https://web.whatsapp.com' });
-      window.close();
-    });
+    showGoToWhatsApp(statusDot, statusText, btnAction, 'popupTabError');
   }
 });

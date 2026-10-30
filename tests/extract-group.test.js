@@ -49,7 +49,8 @@ test('Extract group: falls back to message authors of that group', async (t) => 
 
 test('Extract group: errors with guidance when nothing is loaded', async (t) => {
   const { openChatAt } = setup(t);
-  await assert.rejects(handleExtractGroup(GROUP_ID), /abre el chat del grupo/i);
+  // The engine is language-agnostic: it reports a code the overlay translates
+  await assert.rejects(handleExtractGroup(GROUP_ID), err => err.code === 'GROUP_NOT_LOADED');
   assert.equal(openChatAt.mock.callCount(), 0);
 });
 

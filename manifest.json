@@ -1,15 +1,16 @@
 {
   "manifest_version": 3,
-  "name": "CLC Agenda",
+  "name": "__MSG_appName__",
   "version": "1.4.0",
-  "description": "Saca tus contactos de WhatsApp Web y guárdalos en Google Contacts o en el celular. Tu agenda, sin depender de WhatsApp.",
+  "default_locale": "en",
+  "description": "__MSG_appDescription__",
   "minimum_chrome_version": "111",
   "host_permissions": [
     "https://web.whatsapp.com/*"
   ],
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "CLC Agenda",
+    "default_title": "__MSG_actionTitle__",
     "default_icon": {
       "16": "icons/icon-16.png",
       "48": "icons/icon-48.png",

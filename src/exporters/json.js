@@ -8,7 +8,8 @@ const DEFAULT_FIELDS = ['name', 'phone', 'cleanPhone', 'isMyContact', 'isAdmin',
 
 export function exportToJSON(contacts = [], options = {}) {
   const activeFields = resolveFields(
-    options.fields && options.fields.length > 0 ? options.fields : DEFAULT_FIELDS
+    options.fields && options.fields.length > 0 ? options.fields : DEFAULT_FIELDS,
+    options.lang
   );
 
   return JSON.stringify({

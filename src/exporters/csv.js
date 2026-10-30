@@ -9,7 +9,8 @@ const DEFAULT_FIELDS = ['name', 'phone', 'isMyContact', 'isAdmin', 'sourceName']
 export function exportToCSV(contacts = [], options = {}) {
   const delimiter = options.delimiter || ',';
   const activeFields = resolveFields(
-    options.fields && options.fields.length > 0 ? options.fields : DEFAULT_FIELDS
+    options.fields && options.fields.length > 0 ? options.fields : DEFAULT_FIELDS,
+    options.lang
   );
 
   const sanitizeCSVField = (val, isPhone = false) => {

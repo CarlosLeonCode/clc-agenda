@@ -7,7 +7,8 @@
 export const IDLE_TIMEOUT_MS = 20000;
 export const TOTAL_TIMEOUT_MS = 180000;
 
-const TIMEOUT_MESSAGE = 'Tiempo de espera agotado al comunicar con WhatsApp Web.';
+// Errors carry a code; the overlay turns codes into copy in the user's language
+const requestError = (code, message) => Object.assign(new Error(message), { code });
 
 export function sendPageRequest(action, payload = {}, { win = window, idleMs = IDLE_TIMEOUT_MS, totalMs = TOTAL_TIMEOUT_MS } = {}) {
   return new Promise((resolve, reject) => {
@@ -22,7 +23,7 @@ export function sendPageRequest(action, payload = {}, { win = window, idleMs = I
 
     function fail() {
       finish();
-      reject(new Error(TIMEOUT_MESSAGE));
+      reject(requestError('TIMEOUT', 'WhatsApp Web did not answer in time'));
     }
 
     function resetIdle() {
@@ -40,7 +41,7 @@ export function sendPageRequest(action, payload = {}, { win = window, idleMs = I
       } else if (data.type === 'WA_EXTRACTOR_RESPONSE') {
         finish();
         if (data.success) resolve(data.data);
-        else reject(new Error(data.error || 'Error en la extracción.'));
+        else reject(requestError(data.code || 'ENGINE_ERROR', data.error || 'Extraction failed'));
       }
     }
 

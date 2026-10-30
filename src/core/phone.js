@@ -71,6 +71,23 @@ export function detectCountry(cleanNumber) {
   return { country: 'Internacional', iso: 'INTL', prefix: '' };
 }
 
+// English names by ISO code; the engine stores the Spanish name in `country`
+const COUNTRY_NAMES_EN = {
+  US: 'United States / Canada', ES: 'Spain', AR: 'Argentina', MX: 'Mexico', CO: 'Colombia', CL: 'Chile',
+  PE: 'Peru', VE: 'Venezuela', EC: 'Ecuador', GT: 'Guatemala', SV: 'El Salvador', HN: 'Honduras',
+  NI: 'Nicaragua', CR: 'Costa Rica', PA: 'Panama', BO: 'Bolivia', PY: 'Paraguay', UY: 'Uruguay',
+  BR: 'Brazil', GB: 'United Kingdom', FR: 'France', DE: 'Germany', IT: 'Italy', PT: 'Portugal',
+  INTL: 'International', '??': 'Unknown'
+};
+
+/** Country name in the requested language ('' when the contact has none). */
+export function countryName(contact = {}, lang = 'es') {
+  if (lang !== 'en') return contact.country || '';
+  const iso = contact.countryIso || COUNTRY_CODES.find(c => c.country === contact.country)?.iso
+    || { Desconocido: '??', Internacional: 'INTL' }[contact.country];
+  return COUNTRY_NAMES_EN[iso] || contact.country || '';
+}
+
 export function formatInternationalPhone(cleanNumber) {
   if (!cleanNumber) return '';
   return `+${cleanNumber}`;

@@ -1,0 +1,65 @@
+{
+  "appName": {
+    "message": "CLC Agenda"
+  },
+  "appDescription": {
+    "message": "Export your WhatsApp Web contacts to Google Contacts or your phone. Your contacts, no longer stuck in WhatsApp."
+  },
+  "actionTitle": {
+    "message": "CLC Agenda"
+  },
+  "popupDetecting": {
+    "message": "Detecting WhatsApp Web…"
+  },
+  "popupReady": {
+    "message": "WhatsApp Web detected and ready"
+  },
+  "popupOpen": {
+    "message": "Open on WhatsApp Web"
+  },
+  "popupReload": {
+    "message": "Reload the WhatsApp tab"
+  },
+  "popupNotOnWhatsApp": {
+    "message": "You're not on WhatsApp Web"
+  },
+  "popupGoTo": {
+    "message": "Go to WhatsApp Web"
+  },
+  "popupTabError": {
+    "message": "Couldn't detect the current tab"
+  },
+  "popupLoading": {
+    "message": "Loading…"
+  },
+  "popupWhy": {
+    "message": "If WhatsApp bans you, your contacts can still live somewhere else."
+  },
+  "popupGoogleTitle": {
+    "message": "CSV for Google Contacts"
+  },
+  "popupGoogleDesc": {
+    "message": "The exact columns Google Contacts needs to import."
+  },
+  "popupPhoneTitle": {
+    "message": "Phone"
+  },
+  "popupPhoneDesc": {
+    "message": "A file for your phone's contacts. You can sync it with Telegram later."
+  },
+  "popupExcelTitle": {
+    "message": "Excel"
+  },
+  "popupExcelDesc": {
+    "message": "To review or edit. It doesn't add them to your contacts."
+  },
+  "popupJsonTitle": {
+    "message": "JSON"
+  },
+  "popupJsonDesc": {
+    "message": "A technical backup, or for another tool."
+  },
+  "popupFooter": {
+    "message": "Runs locally • Open source"
+  }
+}

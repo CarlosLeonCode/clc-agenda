@@ -1,5 +1,12 @@
+// Organization and note follow the export language; Spanish is the default
+export const EXPORT_TEXT = {
+  es: { organization: 'Empresa WhatsApp', notePrefix: 'Extraído de', unnamed: 'Contacto WhatsApp' },
+  en: { organization: 'WhatsApp Business', notePrefix: 'Exported from', unnamed: 'WhatsApp contact' }
+};
+
 /** Normalize the contact shape shared by CSV and vCard exporters. */
-export function normalizeContact(contact = {}) {
+export function normalizeContact(contact = {}, lang = 'es') {
+  const text = EXPORT_TEXT[lang] || EXPORT_TEXT.es;
   const displayName = String(contact.name || contact.savedName || contact.pushName || '').trim();
   const rawPhone = String(contact.phone || contact.cleanPhone || '').trim();
   const cleanPhone = String(contact.cleanPhone || rawPhone).replace(/[^\d]/g, '');
@@ -10,8 +17,8 @@ export function normalizeContact(contact = {}) {
     displayName,
     phone,
     cleanPhone,
-    organization: contact.isBusiness ? 'Empresa WhatsApp' : '',
-    note: source ? `Extraído de: ${source}` : '',
+    organization: contact.isBusiness ? text.organization : '',
+    note: source ? `${text.notePrefix}: ${source}` : '',
     labels: source ? [source] : []
   };
 }

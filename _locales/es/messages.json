@@ -1,0 +1,65 @@
+{
+  "appName": {
+    "message": "CLC Agenda"
+  },
+  "appDescription": {
+    "message": "Saca tus contactos de WhatsApp Web y guárdalos en Google Contacts o en el celular. Tu agenda, sin depender de WhatsApp."
+  },
+  "actionTitle": {
+    "message": "CLC Agenda"
+  },
+  "popupDetecting": {
+    "message": "Detectando WhatsApp Web..."
+  },
+  "popupReady": {
+    "message": "WhatsApp Web detectado y listo"
+  },
+  "popupOpen": {
+    "message": "Abrir en WhatsApp Web"
+  },
+  "popupReload": {
+    "message": "Recarga la pestaña de WhatsApp"
+  },
+  "popupNotOnWhatsApp": {
+    "message": "No estás en WhatsApp Web"
+  },
+  "popupGoTo": {
+    "message": "Ir a WhatsApp Web"
+  },
+  "popupTabError": {
+    "message": "Error al detectar pestaña"
+  },
+  "popupLoading": {
+    "message": "Cargando..."
+  },
+  "popupWhy": {
+    "message": "Si te banean WhatsApp, la agenda puede seguir en otro lado."
+  },
+  "popupGoogleTitle": {
+    "message": "CSV para Google Contacts"
+  },
+  "popupGoogleDesc": {
+    "message": "Columnas exactas para importar en Google Contacts."
+  },
+  "popupPhoneTitle": {
+    "message": "Celular"
+  },
+  "popupPhoneDesc": {
+    "message": "Archivo para la agenda del teléfono. Después se puede sincronizar con Telegram."
+  },
+  "popupExcelTitle": {
+    "message": "Excel"
+  },
+  "popupExcelDesc": {
+    "message": "Para revisar o editar. No los carga en la agenda."
+  },
+  "popupJsonTitle": {
+    "message": "JSON"
+  },
+  "popupJsonDesc": {
+    "message": "Respaldo técnico, o para otra herramienta."
+  },
+  "popupFooter": {
+    "message": "Funciona en tu navegador • Código abierto"
+  }
+}

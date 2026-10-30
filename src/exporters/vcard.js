@@ -2,7 +2,8 @@
  * vCard 3.0 Exporter for phone address books
  */
 
-import { splitDisplayName } from './normalize.js';
+import { splitDisplayName, EXPORT_TEXT } from './normalize.js';
+import { countryName } from '../core/phone.js';
 
 export function escapeVCardValue(value) {
   if (value === null || value === undefined) return '';
@@ -15,6 +16,7 @@ export function escapeVCardValue(value) {
 
 export function exportToVCard(contacts = [], options = {}) {
   const selectedFields = options.fields || ['name', 'phone'];
+  const text = EXPORT_TEXT[options.lang] || EXPORT_TEXT.es;
   const includeName = selectedFields.includes('name');
   const includePhone = selectedFields.includes('phone') || selectedFields.includes('cleanPhone');
   const includeOrg = selectedFields.includes('isBusiness');
@@ -32,7 +34,7 @@ export function exportToVCard(contacts = [], options = {}) {
     } else if (phone) {
       name = given = `WA ${phone}`;
     } else {
-      name = given = 'Contacto WhatsApp';
+      name = given = text.unnamed;
     }
 
     const lines = [
@@ -47,20 +49,20 @@ export function exportToVCard(contacts = [], options = {}) {
     }
 
     if (includeOrg && c.isBusiness) {
-      lines.push('ORG:Empresa WhatsApp');
+      lines.push(`ORG:${escapeVCardValue(text.organization)}`);
     }
 
     const categories = [];
     if (selectedFields.includes('sourceName') && c.sourceName) categories.push(c.sourceName);
     if (selectedFields.includes('isAdmin') && c.isAdmin) categories.push('Admin');
-    if (selectedFields.includes('country') && c.country) categories.push(c.country);
+    if (selectedFields.includes('country') && c.country) categories.push(countryName(c, options.lang));
 
     if (categories.length > 0) {
       lines.push(`CATEGORIES:${categories.map(escapeVCardValue).join(',')}`);
     }
 
     if (includeNote && c.sourceName) {
-      lines.push(`NOTE:Extraído de: ${escapeVCardValue(c.sourceName)}`);
+      lines.push(`NOTE:${text.notePrefix}: ${escapeVCardValue(c.sourceName)}`);
     }
 
     lines.push('END:VCARD');

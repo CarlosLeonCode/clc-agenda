@@ -7,6 +7,9 @@ import { buildResolvedContact, findActiveOpenGroup } from './resolver.js';
 
 const PROGRESS_EVERY = 250;
 
+// The engine stays language-agnostic: errors carry a code the overlay translates
+const engineError = (code, message) => Object.assign(new Error(message), { code });
+
 // Reports progress every PROGRESS_EVERY resolved contacts so the UI knows the engine is alive
 function progressTicker(onProgress) {
   let count = 0;
@@ -24,7 +27,7 @@ export async function handleExtractGroup(groupId, onProgress = () => {}) {
   if (targetGroupId === 'ACTIVE_DOM' || !targetGroupId) {
     targetGroupId = findActiveOpenGroup(data);
     if (!targetGroupId) {
-      throw new Error('No hay ninguna conversación de grupo abierta actualmente en la pantalla.');
+      throw engineError('NO_ACTIVE_GROUP', 'No group chat is open on screen');
     }
   }
 
@@ -100,7 +103,7 @@ export async function handleExtractGroup(groupId, onProgress = () => {}) {
   }
 
   if (participants.length === 0) {
-    throw new Error(`Este grupo aún no tiene participantes cargados en memoria. Por favor abre el chat del grupo en WhatsApp Web y vuelve a hacer clic en Extraer.`);
+    throw engineError('GROUP_NOT_LOADED', 'The group has no participants loaded in memory');
   }
 
   const results = [];

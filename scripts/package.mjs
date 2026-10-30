@@ -15,6 +15,8 @@ const out = path.resolve(root, process.argv[2] || 'clc-agenda.zip');
 // Runtime files only: no sources, tests, site, video or brand SVG sources
 const FILES = [
   'manifest.json',
+  '_locales/en/messages.json',
+  '_locales/es/messages.json',
   'dist/content.js',
   'dist/inject.js',
   'dist/overlay.js',

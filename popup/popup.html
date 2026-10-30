@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,10 +10,10 @@
   <div class="popup-container">
     <div class="header">
       <div class="logo-area">
-        <img src="../icons/icon-48.png" alt="Logo" class="logo">
+        <img src="../icons/icon-48.png" alt="" class="logo">
         <div>
           <h2>CLC Agenda</h2>
-          <span class="version">v1.3.0</span>
+          <span class="version" id="version"></span>
         </div>
       </div>
     </div>
@@ -21,36 +21,36 @@
     <div class="body-content">
       <div id="status-card" class="status-card">
         <div class="status-indicator" id="status-dot"></div>
-        <div class="status-text" id="status-text">Detectando WhatsApp Web...</div>
+        <div class="status-text" id="status-text" data-i18n="popupDetecting">Detecting WhatsApp Web…</div>
       </div>
 
-      <p class="popup-why">Si te banean WhatsApp, la agenda puede seguir en otro lado.</p>
+      <p class="popup-why" data-i18n="popupWhy">If WhatsApp bans you, your contacts can still live somewhere else.</p>
       <dl class="format-list">
         <div>
-          <dt>CSV para Google Contacts</dt>
-          <dd>Columnas exactas para importar en Google Contacts.</dd>
+          <dt data-i18n="popupGoogleTitle">CSV for Google Contacts</dt>
+          <dd data-i18n="popupGoogleDesc">The exact columns Google Contacts needs to import.</dd>
         </div>
         <div>
-          <dt>Celular</dt>
-          <dd>Archivo para la agenda del teléfono. Después se puede sincronizar con Telegram.</dd>
+          <dt data-i18n="popupPhoneTitle">Phone</dt>
+          <dd data-i18n="popupPhoneDesc">A file for your phone's contacts. You can sync it with Telegram later.</dd>
         </div>
         <div>
-          <dt>Excel</dt>
-          <dd>Para revisar o editar. No los carga en la agenda.</dd>
+          <dt data-i18n="popupExcelTitle">Excel</dt>
+          <dd data-i18n="popupExcelDesc">To review or edit. It doesn't add them to your contacts.</dd>
         </div>
         <div>
-          <dt>JSON</dt>
-          <dd>Respaldo técnico, o para otra herramienta.</dd>
+          <dt data-i18n="popupJsonTitle">JSON</dt>
+          <dd data-i18n="popupJsonDesc">A technical backup, or for another tool.</dd>
         </div>
       </dl>
 
-      <button id="btn-action" class="btn-primary">
-        Cargando...
+      <button id="btn-action" class="btn-primary" data-i18n="popupLoading">
+        Loading…
       </button>
     </div>
 
     <div class="footer">
-      <span>100% Seguro & Privado • Open Source</span>
+      <span data-i18n="popupFooter">Runs locally • Open source</span>
     </div>
   </div>
 

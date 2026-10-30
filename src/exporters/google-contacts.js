@@ -19,9 +19,9 @@ function csvField(value) {
 }
 
 /** Export the local-only contact mapping in Google Contacts' CSV import shape. */
-export function exportToGoogleContactsCSV(contacts = []) {
+export function exportToGoogleContactsCSV(contacts = [], options = {}) {
   const rows = contacts.map(contact => {
-    const normalized = normalizeContact(contact);
+    const normalized = normalizeContact(contact, options.lang);
     const { firstName, lastName } = splitDisplayName(normalized.displayName);
     const text = [
       firstName, '', lastName, '', '', '', '', '', normalized.organization, '',

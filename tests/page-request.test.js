@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { sendPageRequest } from '../src/ui/page-request.js';
 
 const ORIGIN = 'https://web.whatsapp.com';
-const TIMEOUT_COPY = /Tiempo de espera agotado/;
 
 function fakeWindow() {
   const listeners = new Set();
@@ -50,7 +49,7 @@ test('Page request: rejects after 20 s without any message', async (t) => {
   assert.equal(state.settled, false);
   t.mock.timers.tick(1);
   await flush();
-  assert.match(state.error?.message, TIMEOUT_COPY);
+  assert.equal(state.error?.code, 'TIMEOUT');
   assert.equal(win.listenerCount(), 0);
 });
 
@@ -86,7 +85,7 @@ test('Page request: rejects at 180 s even while progress keeps arriving', async 
   assert.equal(state.settled, false, 'still waiting at 170 s');
   t.mock.timers.tick(10000);
   await flush();
-  assert.match(state.error?.message, TIMEOUT_COPY);
+  assert.equal(state.error?.code, 'TIMEOUT');
 });
 
 test('Page request: ignores responses and progress for other requests', async (t) => {
@@ -99,5 +98,15 @@ test('Page request: ignores responses and progress for other requests', async (t
   win.emit({ type: 'WA_EXTRACTOR_RESPONSE', requestId: 'other', success: true, data: 'wrong' });
   t.mock.timers.tick(5000);
   await flush();
-  assert.match(state.error?.message, TIMEOUT_COPY);
+  assert.equal(state.error?.code, 'TIMEOUT');
+});
+
+test('Page request: engine error codes reach the caller', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const win = fakeWindow();
+  const state = track(sendPageRequest('EXTRACT_GROUP', {}, { win }));
+  const { requestId } = win.posted[0];
+  win.emit({ type: 'WA_EXTRACTOR_RESPONSE', requestId, success: false, code: 'GROUP_NOT_LOADED', error: 'Group has no participants loaded' });
+  await flush();
+  assert.equal(state.error?.code, 'GROUP_NOT_LOADED');
 });

@@ -56,7 +56,7 @@ function start() {
           responseData = await handleExtractChats(payload?.filter || 'all', onProgress);
           break;
         default:
-          throw new Error(`Acción no reconocida: ${action}`);
+          throw Object.assign(new Error(`Unknown action: ${action}`), { code: 'UNKNOWN_ACTION' });
       }
 
       window.postMessage({
@@ -71,7 +71,8 @@ function start() {
         type: 'WA_EXTRACTOR_RESPONSE',
         requestId,
         success: false,
-        error: err.message || 'Error al procesar solicitud'
+        code: err.code || 'ENGINE_ERROR',
+        error: err.message || 'Request failed'
       }, window.location.origin);
     }
   });

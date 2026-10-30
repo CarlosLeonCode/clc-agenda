@@ -16,6 +16,8 @@ const entries = execFileSync('unzip', ['-Z1', zipPath], { encoding: 'utf8' }).tr
 const read = file => execFileSync('unzip', ['-p', zipPath, file], { encoding: 'utf8' });
 
 const RUNTIME_FILES = [
+  '_locales/en/messages.json',
+  '_locales/es/messages.json',
   'dist/content.js',
   'dist/inject.js',
   'dist/overlay.js',
