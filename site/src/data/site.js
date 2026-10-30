@@ -1,4 +1,6 @@
+import { pathToFileURL } from 'node:url';
 import es from '../i18n/es.js';
+import { isLeadCaptureInstalled, leadsEnabled } from '../lib/lead-capture.js';
 
 // Single source for links and FAQ: the page and its JSON-LD read the same data
 export const REPO = 'https://github.com/CarlosLeonCode/clc-agenda';
@@ -11,6 +13,12 @@ export const LEADS = {
   project: 'clc-agenda',
   endpoint: 'https://xjftniraqohzpmxudqgx.supabase.co/functions/v1/leads'
 };
+// Off without the optional package (no NODE_AUTH_TOKEN) or with LEADS_DISABLED=1: then the
+// card, its open controls, the privacy pages and their links are not rendered. Builds run from site/.
+export const LEADS_ENABLED = leadsEnabled({
+  endpoint: LEADS.endpoint,
+  installed: isLeadCaptureInstalled(pathToFileURL(`${process.cwd()}/`))
+});
 export const AUTHOR = {
   name: 'carlosleoncode',
   url: 'https://www.carlosleoncode.com/',

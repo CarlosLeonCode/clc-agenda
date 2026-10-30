@@ -1,0 +1,57 @@
+---
+// The privacy policy for the new-version emails (clc-leads), adapted from clc-leads'
+// PRIVACY_TEMPLATE.md. Copy lives in src/i18n/{es,en}.js; the facts in src/data/privacy.js.
+import { PRIVACY } from '../data/privacy.js';
+import { copyFor } from '../i18n/index.js';
+
+const { lang = 'es' } = Astro.props;
+const copy = copyFor(lang);
+const t = copy.privacy;
+const updated = PRIVACY.lastUpdated;
+const isDate = /^\d{4}-\d{2}-\d{2}$/.test(updated);
+const updatedLabel = isDate
+  ? new Intl.DateTimeFormat(lang === 'es' ? 'es-419' : 'en-US', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${updated}T00:00:00Z`))
+  : updated;
+---
+<main id="contenido" class="policy wrap">
+  <header class="policy-head">
+    <p class="policy-kicker">{t.kicker}</p>
+    <h1 class="policy-title">{t.h1}</h1>
+    <p class="policy-lead">{t.lead}</p>
+  </header>
+
+  <article class="policy-body">
+    {t.sections(PRIVACY).map(({ title, body }) => (
+      <section>
+        <h2>{title}</h2>
+        {body.map(block => Array.isArray(block)
+          ? <ul>{block.map(item => <li set:html={item} />)}</ul>
+          : <p set:html={block} />)}
+      </section>
+    ))}
+    <p class="policy-updated">
+      {t.updated}: {isDate ? <time datetime={updated}>{updatedLabel}</time> : updatedLabel}
+    </p>
+    <p class="policy-back"><a class="btn btn-alt" href={copy.routes.home}>{t.back}</a></p>
+  </article>
+</main>
+
+<style>
+  .policy { padding-top: 56px; padding-bottom: 88px; }
+  .policy-head { max-width: 720px; margin: 0 auto 40px; }
+  .policy-kicker { font: 600 14px var(--body); color: var(--violet-strong); letter-spacing: .02em; margin-bottom: 14px; }
+  .policy-title { font: 800 clamp(38px, 6.5vw, 68px)/0.95 var(--display); letter-spacing: -0.04em; }
+  .policy-lead { font-size: clamp(17px, 2.2vw, 20px); color: var(--muted); margin-top: 20px; }
+
+  .policy-body { max-width: 720px; margin: 0 auto; }
+  .policy-body section { padding-top: 28px; margin-top: 28px; border-top: 1px solid var(--line); }
+  .policy-body h2 { font: 800 clamp(22px, 3vw, 28px)/1.1 var(--display); letter-spacing: -0.03em; margin-bottom: 12px; }
+  .policy-body p, .policy-body li { color: var(--muted); line-height: 1.6; overflow-wrap: anywhere; }
+  .policy-body p + p, .policy-body ul + p, .policy-body p + ul { margin-top: 12px; }
+  .policy-body ul { padding-left: 1.2em; display: grid; gap: 8px; list-style: disc; }
+  .policy-body li::marker { color: var(--violet-strong); }
+  .policy-body :global(strong) { color: var(--ink); }
+  .policy-body :global(a) { color: var(--violet-strong); font-weight: 600; text-underline-offset: 3px; }
+  .policy-updated { margin-top: 40px; font-size: 15px; }
+  .policy-back { margin-top: 28px; }
+</style>

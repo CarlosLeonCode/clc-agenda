@@ -1,8 +1,10 @@
 import type { APIRoute } from 'astro';
 import { BUILD_DATE } from '../data/structured.js';
+import { LEADS_ENABLED } from '../data/site.js';
 import { LANGS, twins } from '../i18n/index.js';
 
-const PAGES = ['home', 'install'];
+// The privacy policy exists only while the new-version emails are on
+const PAGES = ['home', 'install', ...(LEADS_ENABLED ? ['privacy'] : [])];
 
 // Every URL lists its language twins (and x-default → English) so search engines
 // serve the right language without an auto-redirect

@@ -56,7 +56,7 @@ const FAQ = [
 export default {
   lang: 'en',
   ogLocale: 'en_US',
-  routes: { home: '/en/', install: '/en/install' },
+  routes: { home: '/en/', install: '/en/install', privacy: '/en/privacy' },
   ids: { how: 'how-it-works', formats: 'formats', privacy: 'privacy', faq: 'faq', step: 'step' },
   meta: {
     title: 'Export WhatsApp contacts to Google Contacts | CLC Agenda',
@@ -121,7 +121,7 @@ export default {
   },
   faq: { title: 'Frequently asked questions', items: FAQ },
   finalCta: { title: 'Take back your contacts.', button: 'Install the extension' },
-  footer: { license: 'CLC Agenda · Open source, MIT license · ', notAffiliated: 'Not affiliated with WhatsApp or Meta.', leads: 'Get new-version emails' },
+  footer: { license: 'CLC Agenda · Open source, MIT license · ', notAffiliated: 'Not affiliated with WhatsApp or Meta.', leads: 'Get new-version emails', privacy: 'Privacy' },
   install: {
     title: 'How to install CLC Agenda in Chrome, step by step',
     description: 'Install CLC Agenda in your browser in 7 simple steps, no tech skills needed: download, unzip and load the extension in Chrome, Brave, Edge or Opera.',
@@ -165,6 +165,7 @@ export default {
       placeholder: 'name@email.com',
       consent: 'I agree that CLC Agenda stores my email to tell me about new versions. I can unsubscribe at any time.',
       privacy: 'We only use it to tell you about new versions. Nothing else.',
+      privacyLink: 'Details in the privacy policy',
       submit: 'Notify me',
       compactText: 'Want an email when there is a new version?',
       compactYes: 'Yes, notify me',
@@ -197,5 +198,62 @@ export default {
       tool: 'Chrome, Brave, Edge or Opera (version 111 or later)'
     },
     breadcrumb: ['Home', 'Install']
+  },
+  privacy: {
+    title: 'Privacy policy | CLC Agenda',
+    description: 'What CLC Agenda stores if you ask for new-version emails, what for, who processes it and how to unsubscribe. The extension itself sends nothing.',
+    kicker: 'Privacy',
+    h1: 'Privacy policy',
+    lead: 'The CLC Agenda extension sends nothing to any server: your contacts and the files you export stay in your browser. This policy covers only one optional thing on this site: the emails we send when a new version is out.',
+    updated: 'Last updated',
+    back: 'Back to home',
+    // p: PRIVACY (src/data/privacy.js). Strings may hold HTML; arrays are lists.
+    sections: (p) => [
+      { title: 'Controller', body: [`${p.controller}, ${p.location}. Contact: <a href="mailto:${p.contactEmail}">${p.contactEmail}</a>.`] },
+      {
+        title: 'What data we collect',
+        body: [
+          'Only what you give us in the new-version form, and only when you send it:',
+          [
+            '<strong>Your email address.</strong>',
+            '<strong>Proof of your consent:</strong> the exact sentence you agreed to and the date and time.',
+            '<strong>Minimal technical data:</strong> the page you subscribed from (the home page or the install guide), your browser language and your browser type (for example, "Chrome" or "Safari on mobile"), with no versions or device identifiers.'
+          ],
+          'We do not ask for your name, occupation or country.',
+          '<strong>We do not store</strong> your IP address (to stop abuse we use an irreversible, salted digest that is deleted shortly after), your location or tracking cookies. We never see your contacts or anything you do with the extension. Whether you already closed the prompt or subscribed is kept only in your browser.'
+        ]
+      },
+      { title: 'What we use it for', body: ['Only to write to you when there is a new version of CLC Agenda. We do not send ads or other newsletters, and we do not sell or hand your data to third parties.'] },
+      { title: 'Legal basis', body: ['Your <strong>prior, express and informed consent</strong>, which you give by ticking the box (Colombia\'s Law 1581 of 2012, art. 9, and Decree 1377 of 2013; GDPR, art. 6(1)(a)). You can withdraw it at any time; that does not affect emails already sent.'] },
+      {
+        title: 'Processors',
+        body: [
+          'We use providers that process the data on our behalf and under our instructions:',
+          [
+            `<strong>Supabase</strong> (database). Region: ${p.supabaseRegion}.`,
+            ...(p.usesBrevo ? ['<strong>Brevo</strong> (sending emails and handling unsubscribes).'] : [])
+          ],
+          'Some of these providers may store data outside your country. When they do, they rely on appropriate contractual safeguards.'
+        ]
+      },
+      { title: 'How long we keep it', body: [`For as long as you stay subscribed. If you unsubscribe, we stop writing right away and delete your data within ${p.retentionDaysAfterUnsubscribe} days, except the minimum record needed not to write to you again. If ${p.inactiveListMonths} months go by without a new-version email, we delete the list.`] },
+      {
+        title: 'Your rights',
+        body: [
+          'You can <strong>know, update, correct and delete</strong> your data, <strong>withdraw your consent</strong> and ask for <strong>proof of the authorization</strong> you gave (Law 1581, art. 8). If you are in the European Union, you also have the rights of <strong>access, rectification, erasure, restriction, objection and portability</strong> (GDPR, arts. 15 to 21).',
+          `To use them, write to <a href="mailto:${p.contactEmail}">${p.contactEmail}</a>. We will answer within ${p.responseDays.queries} business days for questions and ${p.responseDays.claims} business days for complaints, as Law 1581 sets.`,
+          'If you are not satisfied, you can go to the <strong>Superintendencia de Industria y Comercio</strong> (Colombia\'s data protection authority) or to the data protection authority in your country.'
+        ]
+      },
+      {
+        title: 'How to unsubscribe',
+        body: [[
+          p.usesBrevo ? 'With the unsubscribe link included in every email, or' : 'By replying to any of our emails to ask to be removed, or',
+          `by writing to <a href="mailto:${p.contactEmail}">${p.contactEmail}</a> from the subscribed address.`
+        ]]
+      },
+      { title: 'Minors', body: [`The emails are meant for people aged ${p.minimumAge} or over. If you are younger, ask a parent or guardian to authorize it.`] },
+      { title: 'Changes', body: ['If we change this policy in an important way, we will say so here with the date of the update.'] }
+    ]
   }
 };

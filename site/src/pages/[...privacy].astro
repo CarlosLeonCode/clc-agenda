@@ -1,0 +1,23 @@
+---
+// /privacidad and /en/privacy. They exist only while the new-version emails are on
+// (LEADS_ENABLED): without them nothing is collected, so there is no policy to show.
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import PrivacyPolicy from '../components/PrivacyPolicy.astro';
+import { LEADS_ENABLED } from '../data/site.js';
+import { LANGS, twins } from '../i18n/index.js';
+
+export function getStaticPaths() {
+  if (!LEADS_ENABLED) return [];
+  const routes = twins('privacy');
+  return LANGS.map(lang => ({ params: { privacy: routes[lang].replace(/^\//, '') }, props: { lang } }));
+}
+
+const { lang } = Astro.props;
+---
+<Base lang={lang} page="privacy">
+  <Nav lang={lang} page="privacy" />
+  <PrivacyPolicy lang={lang} />
+  <Footer lang={lang} />
+</Base>

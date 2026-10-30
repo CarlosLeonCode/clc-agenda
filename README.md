@@ -53,3 +53,14 @@ Local install:
 Tests: `npm test` (builds first). While developing, `npm run watch` rebuilds on every change.
 
 Exporters: `src/exporters/google-contacts.js`, `src/exporters/vcard.js`, `src/exporters/csv.js`, `src/exporters/json.js`. The window you see on WhatsApp is `src/ui/overlay.js`, and the engine that reads WhatsApp Web is `src/page/`.
+
+### Landing page (`site/`)
+
+Astro, deployed on Netlify (`netlify.toml`). In `site/`: `npm ci`, then `npm run dev`, or `npm test` to build and check it.
+
+The optional "new version" emails use [clc-leads](https://github.com/CarlosLeonCode/clc-leads). Its client, `@carlosleoncode/lead-capture`, is a private package on GitHub Packages and an optional dependency:
+
+- **Without `NODE_AUTH_TOKEN`** npm skips it and the site still builds, with no email card and no privacy page. The extension is unaffected: it never sends anything anywhere.
+- **With it** (a GitHub token with `read:packages`, in your shell and in Netlify's environment variables) the card, the footer links and the privacy policy at `/privacidad` and `/en/privacy` are on. `LEADS_DISABLED=1` turns them off for a build.
+- The clc-leads function must list `clc-agenda` in `ALLOWED_PROJECTS` and the site's origins in `ALLOWED_ORIGINS`.
+- Before a production deploy with leads on, fill the `TODO` values in `site/src/data/privacy.js` (Supabase region, last updated date). Netlify production builds (`CONTEXT=production`) and `PRIVACY_STRICT=1` builds fail while any remain.

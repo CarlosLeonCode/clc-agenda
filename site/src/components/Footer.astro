@@ -1,15 +1,21 @@
 ---
-import { REPO } from '../data/site.js';
+import { REPO, LEADS_ENABLED } from '../data/site.js';
 import { copyFor } from '../i18n/index.js';
 
-// `leads`: pages that load the new-version card get a footer control that opens it
+// `leads`: pages that load the new-version card get a footer control that opens it.
+// Both it and the privacy link exist only while the new-version emails are on.
 const { lang = 'es', leads = false } = Astro.props;
 const copy = copyFor(lang);
 ---
 <footer class="site-footer">
   <div class="wrap footer-row">
     <span>{copy.footer.license}<a href={REPO}>GitHub</a></span>
-    {leads && <button type="button" class="footer-leads" data-leads-open>{copy.footer.leads}</button>}
+    {LEADS_ENABLED && (
+      <span class="footer-links">
+        {leads && <button type="button" class="footer-leads" data-leads-open>{copy.footer.leads}</button>}
+        <a href={copy.routes.privacy}>{copy.footer.privacy}</a>
+      </span>
+    )}
     <span>{copy.footer.notAffiliated}</span>
   </div>
 </footer>

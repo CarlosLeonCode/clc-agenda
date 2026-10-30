@@ -4,20 +4,21 @@
 // the page. src/scripts/leads.js drives it. One card per page.
 // variant: "inline" sits in the guide's flow on small screens; "floating" is a corner
 // card on large screens and a bottom sheet on phones.
-import { LEADS } from '../data/site.js';
+// Renders nothing while the new-version emails are off (LEADS_ENABLED).
+import { LEADS, LEADS_ENABLED } from '../data/site.js';
 import { copyFor } from '../i18n/index.js';
 
 const { lang = 'es', variant = 'inline', source = 'install-page', invite = true } = Astro.props;
 const copy = copyFor(lang);
 const t = copy.install.leads;
 ---
-{invite && (
+{LEADS_ENABLED && invite && (
   <p class="leads-invite">
     {t.invite} <button type="button" class="leads-open" data-leads-open>{t.open}</button>
   </p>
 )}
 
-<section
+{LEADS_ENABLED && <section
   class="leads-card"
   data-leads-card
   data-leads-variant={variant}
@@ -58,11 +59,11 @@ const t = copy.install.leads;
         <label>Website <input type="text" name="website" tabindex="-1" autocomplete="off" data-leads-honeypot /></label>
       </div>
       <button type="submit" class="btn leads-submit" data-leads-submit>{t.submit}</button>
-      <p class="leads-privacy">{t.privacy}</p>
+      <p class="leads-privacy">{t.privacy} <a href={copy.routes.privacy}>{t.privacyLink}</a></p>
     </form>
   </div>
   <p class="leads-status" aria-live="polite" data-leads-status></p>
-</section>
+</section>}
 
 <style>
   .leads-invite { margin-top: 14px; font-size: 15px; color: var(--muted); }
@@ -183,6 +184,7 @@ const t = copy.install.leads;
   .leads-submit { justify-self: start; margin-top: 8px; border: 0; cursor: pointer; }
   .leads-submit:disabled { opacity: .6; cursor: progress; }
   .leads-privacy { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+  .leads-privacy a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
   .leads-status { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
   .leads-status:empty { display: none; }
 

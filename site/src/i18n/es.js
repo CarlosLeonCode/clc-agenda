@@ -56,7 +56,7 @@ const FAQ = [
 export default {
   lang: 'es',
   ogLocale: 'es_419',
-  routes: { home: '/', install: '/instalar' },
+  routes: { home: '/', install: '/instalar', privacy: '/privacidad' },
   ids: { how: 'como-funciona', formats: 'formatos', privacy: 'privacidad', faq: 'preguntas', step: 'paso' },
   meta: {
     // Titles lead with what people search; the brand closes them (≤ 60 characters)
@@ -123,7 +123,7 @@ export default {
   },
   faq: { title: 'Preguntas frecuentes', items: FAQ },
   finalCta: { title: 'Recupera tu agenda.', button: 'Instalar la extensión' },
-  footer: { license: 'CLC Agenda · Código abierto, licencia MIT · ', notAffiliated: 'No está afiliada a WhatsApp ni a Meta.', leads: 'Recibir avisos de versiones nuevas' },
+  footer: { license: 'CLC Agenda · Código abierto, licencia MIT · ', notAffiliated: 'No está afiliada a WhatsApp ni a Meta.', leads: 'Recibir avisos de versiones nuevas', privacy: 'Privacidad' },
   install: {
     title: 'Cómo instalar CLC Agenda en Chrome paso a paso',
     description: 'Instala CLC Agenda en tu navegador en 7 pasos simples, sin saber de tecnología: descarga, descomprime y carga la extensión en Chrome, Brave, Edge u Opera.',
@@ -167,6 +167,7 @@ export default {
       placeholder: 'nombre@correo.com',
       consent: 'Acepto que CLC Agenda guarde mi correo para avisarme de versiones nuevas. Puedo darme de baja cuando quiera.',
       privacy: 'Solo lo usamos para avisarte de versiones nuevas. Nada más.',
+      privacyLink: 'Más detalles en la política de privacidad',
       submit: 'Avísame',
       compactText: '¿Te avisamos cuando haya una versión nueva?',
       compactYes: 'Sí, avísame',
@@ -199,5 +200,62 @@ export default {
       tool: 'Chrome, Brave, Edge u Opera (versión 111 o superior)'
     },
     breadcrumb: ['Inicio', 'Instalar']
+  },
+  privacy: {
+    title: 'Política de privacidad | CLC Agenda',
+    description: 'Qué datos guarda CLC Agenda si pides avisos de versiones nuevas por correo, para qué, quién los trata y cómo darte de baja. La extensión no envía nada.',
+    kicker: 'Privacidad',
+    h1: 'Política de privacidad',
+    lead: 'La extensión CLC Agenda no envía nada a ningún servidor: tus contactos y los archivos que exportas se quedan en tu navegador. Esta política cubre solo una cosa opcional de este sitio: los avisos por correo cuando sale una versión nueva.',
+    updated: 'Última actualización',
+    back: 'Volver al inicio',
+    // p: PRIVACY (src/data/privacy.js). Strings may hold HTML; arrays are lists.
+    sections: (p) => [
+      { title: 'Responsable', body: [`${p.controller}, ${p.location}. Contacto: <a href="mailto:${p.contactEmail}">${p.contactEmail}</a>.`] },
+      {
+        title: 'Qué datos recogemos',
+        body: [
+          'Solo los que nos das en el formulario de avisos, y solo cuando lo envías:',
+          [
+            '<strong>Tu correo electrónico.</strong>',
+            '<strong>La prueba de tu consentimiento:</strong> la frase exacta que aceptaste y la fecha y hora.',
+            '<strong>Datos técnicos mínimos:</strong> la página desde la que te suscribiste (el inicio o la guía de instalación), el idioma de tu navegador y el tipo de navegador (por ejemplo, «Chrome» o «Safari en móvil»), sin versiones ni identificadores del dispositivo.'
+          ],
+          'No te pedimos nombre, profesión ni país.',
+          '<strong>No guardamos</strong> tu dirección IP (para frenar abusos usamos un resumen cifrado e irreversible que se borra en poco tiempo), ni tu ubicación, ni cookies de seguimiento. Tampoco vemos tus contactos ni nada de lo que haces con la extensión. Si ya cerraste el aviso o te suscribiste, eso se guarda solo en tu navegador.'
+        ]
+      },
+      { title: 'Para qué los usamos', body: ['Solo para escribirte cuando haya una versión nueva de CLC Agenda. No enviamos publicidad ni otros boletines, y no vendemos ni cedemos tus datos a terceros.'] },
+      { title: 'Base legal', body: ['Tu <strong>consentimiento previo, expreso e informado</strong>, que das al marcar la casilla (Ley 1581 de 2012, art. 9, y Decreto 1377 de 2013; RGPD, art. 6.1.a). Puedes retirarlo en cualquier momento sin que eso afecte a los envíos anteriores.'] },
+      {
+        title: 'Encargados del tratamiento',
+        body: [
+          'Usamos proveedores que tratan los datos en nuestro nombre y bajo nuestras instrucciones:',
+          [
+            `<strong>Supabase</strong> (base de datos). Región: ${p.supabaseRegion}.`,
+            ...(p.usesBrevo ? ['<strong>Brevo</strong> (envío de correos y gestión de bajas).'] : [])
+          ],
+          'Algunos de estos proveedores pueden almacenar datos fuera de tu país. Cuando eso ocurre, lo hacen con garantías contractuales adecuadas.'
+        ]
+      },
+      { title: 'Cuánto tiempo los conservamos', body: [`Mientras sigas suscrito. Si te das de baja, dejamos de escribirte de inmediato y borramos tus datos en un plazo de ${p.retentionDaysAfterUnsubscribe} días, salvo el registro mínimo necesario para no volver a escribirte. Si pasan ${p.inactiveListMonths} meses sin que enviemos un aviso de versión nueva, eliminamos la lista.`] },
+      {
+        title: 'Tus derechos',
+        body: [
+          'Puedes <strong>conocer, actualizar, rectificar y suprimir</strong> tus datos, <strong>revocar tu consentimiento</strong> y pedir <strong>prueba de la autorización</strong> que diste (Ley 1581, art. 8). Si estás en la Unión Europea, también tienes derecho de <strong>acceso, rectificación, supresión, limitación, oposición y portabilidad</strong> (RGPD, arts. 15 a 21).',
+          `Para ejercerlos, escribe a <a href="mailto:${p.contactEmail}">${p.contactEmail}</a>. Te responderemos en un máximo de ${p.responseDays.queries} días hábiles para consultas y ${p.responseDays.claims} días hábiles para reclamos, como prevé la Ley 1581.`,
+          'Si no quedas conforme, puedes acudir a la <strong>Superintendencia de Industria y Comercio</strong> (Colombia) o a la autoridad de protección de datos de tu país.'
+        ]
+      },
+      {
+        title: 'Cómo darte de baja',
+        body: [[
+          p.usesBrevo ? 'Con el enlace para darte de baja que incluye cada correo, o' : 'Respondiendo a cualquiera de nuestros correos para pedir la baja, o',
+          `escribiendo a <a href="mailto:${p.contactEmail}">${p.contactEmail}</a> desde la dirección suscrita.`
+        ]]
+      },
+      { title: 'Menores de edad', body: [`Los avisos están pensados para mayores de ${p.minimumAge} años. Si eres menor, pide a tu madre, padre o tutor que lo autorice.`] },
+      { title: 'Cambios', body: ['Si cambiamos esta política de forma importante, lo indicaremos aquí con la fecha de actualización.'] }
+    ]
   }
 };

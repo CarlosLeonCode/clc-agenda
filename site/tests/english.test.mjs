@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { LEADS_ENABLED } from '../src/data/site.js';
 
 // `npm test` builds first, so dist/ reflects the current src/.
 const dist = new URL('../dist/', import.meta.url);
@@ -99,7 +100,7 @@ test('english: sitemap lists every page with its language alternates', () => {
       assert.match(sitemap, new RegExp(`<loc>${url(lang, page)}</loc>`));
     }
   }
-  assert.equal((sitemap.match(/<xhtml:link rel="alternate" hreflang="x-default"/g) || []).length, 4);
+  assert.equal((sitemap.match(/<xhtml:link rel="alternate" hreflang="x-default"/g) || []).length, LEADS_ENABLED ? 6 : 4);
 });
 
 test('english: llms.txt is in English and links both languages', () => {

@@ -22,6 +22,16 @@ Para probar la extensión localmente mientras desarrollas:
 4. Haz clic en "Cargar descomprimida" y selecciona la carpeta del proyecto.
 5. Cualquier cambio en `popup/` o `src/` (ya compilado) va a requerir que refresques la extensión desde la página de extensiones y luego recargues WhatsApp Web.
 
+## Landing (`site/`)
+
+La página está hecha con Astro y se publica en Netlify. En `site/`: `npm ci` y luego `npm run dev`, o `npm test` para compilarla y revisarla.
+
+Los avisos de versiones nuevas por correo usan `@carlosleoncode/lead-capture`, un paquete privado de GitHub Packages que es una dependencia opcional:
+
+- **Sin `NODE_AUTH_TOKEN`**, npm lo omite y la página compila igual, sin la tarjeta de avisos ni la política de privacidad. No necesitas el token para contribuir.
+- **Con el token** (de GitHub, con permiso `read:packages`), la tarjeta, los enlaces del pie y la política en `/privacidad` y `/en/privacy` aparecen. `LEADS_DISABLED=1` los apaga en una compilación.
+- Antes de publicar en producción con los avisos activos, completa los valores `TODO` de `site/src/data/privacy.js`. Las compilaciones de producción de Netlify y las que usan `PRIVACY_STRICT=1` fallan mientras quede alguno.
+
 ## Publicar una versión (Releasing)
 
 1. `npm run package` compila y genera `clc-agenda.zip` con solo lo que Chrome necesita. Sirve para probar el paquete que descarga la gente.

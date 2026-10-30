@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { LEADS_ENABLED } from '../src/data/site.js';
 
 // `npm test` builds first, so dist/ reflects the current src/.
 const root = new URL('../', import.meta.url);
@@ -48,8 +49,8 @@ test('seo: sitemap lists both pages with absolute URLs and lastmod', () => {
   assert.match(sitemap, /<urlset xmlns="http:\/\/www.sitemaps.org\/schemas\/sitemap\/0.9"[ >]/);
   assert.match(sitemap, new RegExp(`<loc>${SITE}/</loc>`));
   assert.match(sitemap, new RegExp(`<loc>${SITE}/instalar</loc>`));
-  // Spanish and English twins of each page
-  assert.equal((sitemap.match(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/g) || []).length, 4);
+  // Spanish and English twins of each page, plus the privacy policy while leads are on
+  assert.equal((sitemap.match(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/g) || []).length, LEADS_ENABLED ? 6 : 4);
 });
 
 test('seo: titles lead with what people search and fit in 60 characters', () => {

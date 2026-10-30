@@ -9,12 +9,12 @@ import { copyFor, twins, LANGS } from '../i18n/index.js';
 import displayFont from '@fontsource/bricolage-grotesque/files/bricolage-grotesque-latin-800-normal.woff2?url';
 import bodyFont from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
 
-// Each page passes its language, its `page` key (home | install) for the language
+// Each page passes its language, its `page` key (home | install | privacy) for the language
 // twins, and its own JSON-LD nodes (`graph`); WebSite + WebPage are added here.
 // `noindex` pages (404) get no structured data and no alternates.
 const { lang = 'es', page, graph = [], noindex = false } = Astro.props;
 const copy = copyFor(lang);
-const pageCopy = page === 'install' ? copy.install : copy.meta;
+const pageCopy = page === 'install' ? copy.install : page === 'privacy' ? copy.privacy : copy.meta;
 const { title = pageCopy.title, description = pageCopy.description } = Astro.props;
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');

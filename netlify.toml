@@ -9,6 +9,11 @@
 
 [build.environment]
   NODE_VERSION = "24"
+  # Optional: NODE_AUTH_TOKEN (GitHub token with read:packages), set in Netlify's UI, never here.
+  # With it npm installs @carlosleoncode/lead-capture and the new-version emails and the
+  # privacy pages are on; without it npm skips that optional package and the site builds
+  # without them. Production builds (CONTEXT=production) with leads on fail while
+  # site/src/data/privacy.js still has TODO values.
 
 [[headers]]
   for = "/*"
