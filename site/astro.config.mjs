@@ -5,5 +5,7 @@ import { defineConfig } from 'astro/config';
 export default defineConfig({
   site: process.env.URL || 'http://localhost:4321',
   output: 'static',
-  trailingSlash: 'ignore'
+  trailingSlash: 'ignore',
+  // Never inline scripts or assets: the CSP allows only same-origin files (script-src 'self')
+  vite: { build: { assetsInlineLimit: 0 } }
 });

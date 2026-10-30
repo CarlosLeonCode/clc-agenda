@@ -84,8 +84,10 @@ test('Landing: no third-party resources; external links only to GitHub and the a
   }
 });
 
-test('Landing: install and GitHub links point to the repository', () => {
-  assert.match(html, new RegExp(`href="${REPO}#for-the-technical-details"`));
+test('Landing: every install button opens the install guide; GitHub links the repository', () => {
+  const installCtas = [...html.matchAll(/<a[^>]*href="([^"]*)"[^>]*>(?:(?!<\/a>)[\s\S])*Instalar(?:(?!<\/a>)[\s\S])*<\/a>/g)].map(m => m[1]);
+  assert.ok(installCtas.length >= 3, 'nav, hero and final CTA');
+  for (const href of installCtas) assert.equal(href, '/instalar');
   assert.match(html, new RegExp(`href="${REPO}"`));
 });
 

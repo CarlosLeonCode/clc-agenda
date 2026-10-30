@@ -22,4 +22,10 @@ Para probar la extensión localmente mientras desarrollas:
 4. Haz clic en "Cargar descomprimida" y selecciona la carpeta del proyecto.
 5. Cualquier cambio en `popup/` o `src/` (ya compilado) va a requerir que refresques la extensión desde la página de extensiones y luego recargues WhatsApp Web.
 
+## Publicar una versión (Releasing)
+
+1. `npm run package` compila y genera `clc-agenda.zip` con solo lo que Chrome necesita. Sirve para probar el paquete que descarga la gente.
+2. Actualiza la versión en `manifest.json` y `package.json` (deben coincidir).
+3. Crea y sube la etiqueta: `git tag v1.3.0 && git push --tags`. El workflow `release.yml` corre los tests, arma el ZIP y lo adjunta al Release. La guía de instalación siempre descarga el último.
+
 Cualquier mejora es bienvenida. Abre un Issue si tienes dudas o encontraste un error.

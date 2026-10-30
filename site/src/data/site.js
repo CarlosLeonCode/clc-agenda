@@ -1,6 +1,8 @@
 // Single source for links and FAQ: the page and its JSON-LD read the same data
 export const REPO = 'https://github.com/CarlosLeonCode/clc-agenda';
-export const INSTALL_URL = `${REPO}#for-the-technical-details`;
+// Every "Instalar" button opens the step-by-step guide; the guide links the download
+export const INSTALL_URL = '/instalar';
+export const DOWNLOAD_URL = `${REPO}/releases/latest/download/clc-agenda.zip`;
 export const AUTHOR = { name: 'carlosleoncode', url: 'https://www.carlosleoncode.com/' };
 
 export const TITLE = 'CLC Agenda · Tu agenda, fuera de WhatsApp';

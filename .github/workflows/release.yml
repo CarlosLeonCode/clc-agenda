@@ -1,0 +1,35 @@
+name: Release
+
+# Push a version tag (e.g. git tag v1.3.0 && git push --tags) to publish
+# clc-agenda.zip, the package people download from the install guide.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Check the tag matches manifest.json
+        run: |
+          version=$(node -p "require('./manifest.json').version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match manifest.json version $version"
+            exit 1
+          fi
+      - run: npm ci
+      - run: npm test
+      - run: npm run package
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: clc-agenda.zip
+          generate_release_notes: true

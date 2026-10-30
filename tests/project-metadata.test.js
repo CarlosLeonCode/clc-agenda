@@ -26,3 +26,14 @@ test('Metadata: CI runs the test suite on pushes and pull requests', () => {
   assert.match(workflow, /npm ci/);
   assert.match(workflow, /npm test/);
 });
+
+test('Metadata: tagging a version publishes a release with the installable zip', () => {
+  const workflow = fs.readFileSync(new URL('.github/workflows/release.yml', root), 'utf8');
+  assert.match(workflow, /tags:\s*\n\s*-\s*['"]?v\*/);
+  assert.match(workflow, /npm test/);
+  assert.match(workflow, /npm run package/);
+  assert.match(workflow, /softprops\/action-gh-release@v2/);
+  assert.match(workflow, /files:\s*clc-agenda\.zip/);
+  assert.match(workflow, /contents:\s*write/);
+  assert.match(workflow, /manifest\.json/, 'the tag is checked against the manifest version');
+});

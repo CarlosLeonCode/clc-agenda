@@ -46,3 +46,6 @@ video/out/
 # Landing build output
 site/dist/
 site/.astro/
+
+# Installable package (npm run package)
+clc-agenda.zip

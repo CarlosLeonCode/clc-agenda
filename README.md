@@ -10,6 +10,18 @@ It started as a way to extract contacts. It also exists so a Meta ban does not t
 
 If people only live in WhatsApp, you lose access when the account is closed. CLC Agenda pulls them out of WhatsApp Web and prepares them for **Google Contacts** or your **phone's address book**. The contacts stay somewhere else. You do not depend on one app.
 
+## Install without coding
+
+1. [Download clc-agenda.zip](https://github.com/CarlosLeonCode/clc-agenda/releases/latest/download/clc-agenda.zip), always the latest version.
+2. Unzip it (Windows: right-click > Extract All; Mac: double-click) and keep the `clc-agenda` folder somewhere safe, like Documents.
+3. Open `chrome://extensions` (Brave: `brave://extensions`, Edge: `edge://extensions`, Opera: `opera://extensions`).
+4. Turn on **Developer mode**, top right.
+5. Click **Load unpacked** and choose the `clc-agenda` folder.
+6. Pin the icon: puzzle piece > pin next to CLC Agenda.
+7. Open [WhatsApp Web](https://web.whatsapp.com): the **Extraer contactos** button appears at the bottom right.
+
+The landing page has the same guide, illustrated and in Spanish, at `/instalar`.
+
 ## How to use it
 
 1. Install the extension and open [WhatsApp Web](https://web.whatsapp.com).

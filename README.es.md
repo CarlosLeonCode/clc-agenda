@@ -10,6 +10,18 @@ Al principio servía para extraer contactos. Hoy también sirve para que un bloq
 
 Si las personas solo están en WhatsApp, pierdes el acceso cuando cierran la cuenta. CLC Agenda los saca de WhatsApp Web y los deja listos para importar en **Google Contacts** o en la **agenda del celular**. Así los contactos quedan en otro lugar, y no dependes de una sola aplicación.
 
+## Instalar sin programar
+
+1. [Descarga clc-agenda.zip](https://github.com/CarlosLeonCode/clc-agenda/releases/latest/download/clc-agenda.zip), siempre la última versión.
+2. Descomprímelo (Windows: clic derecho > Extraer todo; Mac: doble clic) y guarda la carpeta `clc-agenda` en un lugar seguro, como Documentos.
+3. Abre `chrome://extensions` (Brave: `brave://extensions`, Edge: `edge://extensions`, Opera: `opera://extensions`).
+4. Activa el **Modo de desarrollador**, arriba a la derecha.
+5. Haz clic en **Cargar descomprimida** y elige la carpeta `clc-agenda`.
+6. Fija el ícono: pieza de rompecabezas > pin junto a CLC Agenda.
+7. Abre [WhatsApp Web](https://web.whatsapp.com): abajo a la derecha aparece el botón **Extraer contactos**.
+
+La landing tiene esta misma guía, con ilustraciones, en `/instalar`.
+
 ## Cómo usarlo
 
 1. Instala la extensión y abre [WhatsApp Web](https://web.whatsapp.com).
