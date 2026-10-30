@@ -231,11 +231,29 @@ const build = (env, outDir) => spawnSync(process.execPath, [astro, 'build', '--o
   encoding: 'utf8',
   timeout: 240_000
 });
+const outDir = (prefix) => {
+  const cache = fileURLToPath(new URL('node_modules/.cache/', root));
+  fs.mkdirSync(cache, { recursive: true });
+  return fs.mkdtempSync(path.join(cache, prefix));
+};
 const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true })
   .flatMap(e => (e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]));
 
+// Astro moves assets from site/.astro into outDir with rename(), which fails across mounts
+// (EXDEV on Netlify, where /tmp is another filesystem): extra builds stay inside site/
+test('extra builds write inside the project, on the same filesystem as .astro', () => {
+  const out = outDir('clc-site-probe-');
+  try {
+    const project = fileURLToPath(root);
+    assert.ok(out.startsWith(project), `${out} is inside ${project}`);
+    assert.equal(fs.statSync(out).dev, fs.statSync(project).dev);
+  } finally {
+    fs.rmSync(out, { recursive: true, force: true });
+  }
+});
+
 test('leads off: the site builds with the fallback and renders nothing lead-related', { timeout: 300_000 }, () => {
-  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'clc-site-off-'));
+  const out = outDir('clc-site-off-');
   try {
     const result = build({ LEADS_DISABLED: '1' }, out);
     assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -266,7 +284,7 @@ test('privacy guard: a strict build with leads on stops and lists the placeholde
   timeout: 300_000,
   skip: (!LEADS_ENABLED && 'leads are off in this build') || (privacyPlaceholders().length === 0 && 'no placeholders left')
 }, () => {
-  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'clc-site-strict-'));
+  const out = outDir('clc-site-strict-');
   try {
     const result = build({ PRIVACY_STRICT: '1' }, out);
     assert.notEqual(result.status, 0, 'build fails');
