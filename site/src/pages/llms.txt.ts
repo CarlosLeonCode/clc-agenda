@@ -1,37 +1,45 @@
 import type { APIRoute } from 'astro';
-import { DEFINITION, DOWNLOAD_URL, REPO, AUTHOR, FAQ } from '../data/site.js';
+import { DOWNLOAD_URL, REPO, AUTHOR } from '../data/site.js';
 import { VERSION } from '../data/structured.js';
+import { copyFor } from '../i18n/index.js';
 
-// llms.txt (llmstxt.org): a plain summary assistants can read before citing the site
+// llms.txt (llmstxt.org): a plain summary assistants can read before citing the site.
+// Written in English, linking the pages in both languages.
+const en = copyFor('en');
+const es = copyFor('es');
+
 export const GET: APIRoute = ({ site }) => {
   const url = (path: string) => new URL(path, site).href;
   const body = `# CLC Agenda
 
-> ${DEFINITION}
+> ${en.definition}
 
-- Tipo: extensión de navegador (Manifest V3) para WhatsApp Web. Versión ${VERSION}.
-- Navegadores: Chrome, Brave, Edge y Opera (Chromium 111 o superior).
-- Exporta: contactos de grupos, chats y etiquetas de WhatsApp Business.
-- Formatos: Google Contacts (CSV), celular (vCard .vcf), Excel (CSV) y JSON.
-- Privacidad: todo pasa en el navegador; sin servidores, sin cuentas, sin telemetría. Solo pide acceso a web.whatsapp.com.
-- Licencia: MIT, código abierto.
-- Autor: ${AUTHOR.name} (${AUTHOR.url}).
-- No está afiliada a WhatsApp ni a Meta.
+- Type: browser extension (Manifest V3) for WhatsApp Web. Version ${VERSION}.
+- Browsers: Chrome, Brave, Edge and Opera (Chromium 111 or later).
+- Exports: contacts from groups, chats and WhatsApp Business labels.
+- Formats: Google Contacts (CSV), phone (vCard .vcf), Excel (CSV) and JSON.
+- Languages: the extension and this site are available in English and Spanish.
+- Privacy: everything runs in the browser; no servers, no accounts, no telemetry. It only asks for access to web.whatsapp.com.
+- License: MIT, open source.
+- Author: ${AUTHOR.name} (${AUTHOR.url}).
+- Not affiliated with WhatsApp or Meta.
 
-## Páginas
+## Pages
 
-- [Inicio](${url('/')}): qué hace, formatos, privacidad y preguntas frecuentes.
-- [Guía de instalación](${url('/instalar')}): instalar la extensión en 7 pasos, sin saber de tecnología.
+- [Home (English)](${url(en.routes.home)}): what it does, formats, privacy and FAQ.
+- [Install guide (English)](${url(en.routes.install)}): install the extension in 7 steps, no technical knowledge needed.
+- [Inicio (Spanish)](${url(es.routes.home)}): the same home page in Spanish.
+- [Guía de instalación (Spanish)](${url(es.routes.install)}): the same install guide in Spanish.
 
-## Descargas y código
+## Downloads and code
 
-- [Descargar clc-agenda.zip](${DOWNLOAD_URL}): última versión lista para instalar.
-- [Repositorio en GitHub](${REPO}): código fuente y documentación técnica.
-- [Sitio del autor](${AUTHOR.url})
+- [Download clc-agenda.zip](${DOWNLOAD_URL}): latest version, ready to install.
+- [GitHub repository](${REPO}): source code and technical documentation.
+- [Author's site](${AUTHOR.url})
 
-## Preguntas frecuentes
+## FAQ
 
-${FAQ.map(({ q, a }) => `- ${q} ${a}`).join('\n')}
+${en.faq.items.map(({ q, a }) => `- ${q} ${a}`).join('\n')}
 `;
   return new Response(body, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 };

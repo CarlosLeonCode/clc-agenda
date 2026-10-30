@@ -1,5 +1,8 @@
 ---
-const items = ['Grupos', 'Chats', 'Etiquetas', 'Google Contacts', 'Celular', 'Excel', 'JSON'];
+import { copyFor } from '../i18n/index.js';
+
+const { lang = 'es' } = Astro.props;
+const items = copyFor(lang).marquee;
 ---
 <div class="marquee" aria-hidden="true">
   <div class="marquee-track" data-marquee>

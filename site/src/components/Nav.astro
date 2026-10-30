@@ -1,19 +1,32 @@
 ---
 import Logo from './Logo.astro';
-import { REPO, INSTALL_URL } from '../data/site.js';
+import { REPO } from '../data/site.js';
+import { copyFor, twins, LANGS } from '../i18n/index.js';
+
+const { lang = 'es', page = 'home' } = Astro.props;
+const copy = copyFor(lang);
+const home = copy.routes.home;
+const languages = twins(page);
 ---
 <header class="site-header">
   <div class="wrap nav-row">
-    <a class="brand" href="/" aria-label="CLC Agenda, ir al inicio"><Logo /><span>CLC Agenda</span></a>
-    <nav aria-label="Principal">
+    <a class="brand" href={home} aria-label={copy.nav.homeLabel}><Logo /><span>CLC Agenda</span></a>
+    <nav aria-label={copy.nav.mainLabel}>
       <ul class="nav-links">
-        <li><a href="/#como-funciona">Cómo funciona</a></li>
-        <li><a href="/#formatos">Formatos</a></li>
-        <li><a href="/#privacidad">Privacidad</a></li>
-        <li><a href="/#preguntas">Preguntas</a></li>
+        <li><a href={`${home}#${copy.ids.how}`}>{copy.nav.how}</a></li>
+        <li><a href={`${home}#${copy.ids.formats}`}>{copy.nav.formats}</a></li>
+        <li><a href={`${home}#${copy.ids.privacy}`}>{copy.nav.privacy}</a></li>
+        <li><a href={`${home}#${copy.ids.faq}`}>{copy.nav.faq}</a></li>
         <li><a href={REPO}>GitHub</a></li>
       </ul>
     </nav>
-    <a class="btn btn-sm" href={INSTALL_URL}><span>Instalar<span class="cta-long"> la extensión</span></span></a>
+    <div class="nav-end">
+      <ul class="lang-switch" aria-label={copy.nav.languageLabel}>
+        {LANGS.map(l => (
+          <li><a href={languages[l]} hreflang={l} lang={l} aria-current={l === lang ? 'true' : undefined}>{l.toUpperCase()}</a></li>
+        ))}
+      </ul>
+      <a class="btn btn-sm" href={copy.routes.install}><span>{copy.nav.install}<span class="cta-long">{copy.nav.installLong}</span></span></a>
+    </div>
   </div>
 </header>

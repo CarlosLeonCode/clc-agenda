@@ -1,0 +1,15 @@
+---
+import Base from '../../layouts/Base.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import InstallGuide from '../../components/InstallGuide.astro';
+import { installNodes } from '../../data/structured.js';
+---
+<Base lang="en" page="install" graph={installNodes(Astro.site, 'en')}>
+  <Nav lang="en" page="install" />
+  <InstallGuide lang="en" />
+  <Footer lang="en" />
+  <script>
+    import '../../scripts/copy.js';
+  </script>
+</Base>

@@ -1,11 +1,14 @@
 ---
-import { FAQ } from '../data/site.js';
+import { copyFor } from '../i18n/index.js';
+
+const { lang = 'es' } = Astro.props;
+const copy = copyFor(lang);
 ---
-<section id="preguntas" class="section" aria-labelledby="faq-title">
+<section id={copy.ids.faq} class="section" aria-labelledby="faq-title">
   <div class="wrap faq-grid">
-    <h2 id="faq-title" class="section-title" data-reveal>Preguntas frecuentes</h2>
+    <h2 id="faq-title" class="section-title" data-reveal>{copy.faq.title}</h2>
     <div class="faq">
-      {FAQ.map(({ q, a }) => (
+      {copy.faq.items.map(({ q, a }) => (
         <details class="faq-item" data-faq>
           <summary>{q}</summary>
           <p>{a}</p>

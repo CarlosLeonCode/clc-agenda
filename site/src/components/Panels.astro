@@ -1,27 +1,23 @@
 ---
-const formats = [
-  { name: 'Google Contacts', tag: 'CSV', note: 'Columnas exactas para importar en Google.' },
-  { name: 'Celular', tag: '.vcf', note: 'vCard para la agenda de iPhone o Android.' },
-  { name: 'Excel o Sheets', tag: 'CSV', note: 'Las columnas que elijas, para revisar.' },
-  { name: 'Respaldo', tag: 'JSON', note: 'Para guardar o usar en otra herramienta.' }
-];
+import { copyFor } from '../i18n/index.js';
+
+const { lang = 'es' } = Astro.props;
+const copy = copyFor(lang);
+const { panels } = copy;
 ---
 <div class="wrap duo">
-  <section id="formatos" class="panel panel-lilac" aria-labelledby="formats-title" data-panel>
-    <h2 id="formats-title" class="panel-title">Listos para importar</h2>
+  <section id={copy.ids.formats} class="panel panel-lilac" aria-labelledby="formats-title" data-panel>
+    <h2 id="formats-title" class="panel-title">{panels.formatsTitle}</h2>
     <ul class="formats">
-      {formats.map(f => (
+      {panels.formats.map(f => (
         <li class="fmt"><span><b>{f.name}</b><small>{f.note}</small></span><span class="tag">{f.tag}</span></li>
       ))}
     </ul>
   </section>
-  <section id="privacidad" class="panel panel-coral" aria-labelledby="privacy-title" data-panel>
-    <h2 id="privacy-title" class="panel-title">Tus contactos no salen de tu navegador.</h2>
+  <section id={copy.ids.privacy} class="panel panel-coral" aria-labelledby="privacy-title" data-panel>
+    <h2 id="privacy-title" class="panel-title">{panels.privacyTitle}</h2>
     <ul class="ticks">
-      <li>Sin servidores: todo se procesa en tu computadora.</li>
-      <li>Sin permisos extra: solo accede a WhatsApp Web.</li>
-      <li>Sin cuentas y sin telemetría.</li>
-      <li>Código abierto, para que lo compruebes.</li>
+      {panels.ticks.map(tick => <li>{tick}</li>)}
     </ul>
   </section>
 </div>

@@ -1,9 +1,13 @@
 ---
 import { REPO } from '../data/site.js';
+import { copyFor } from '../i18n/index.js';
+
+const { lang = 'es' } = Astro.props;
+const copy = copyFor(lang);
 ---
 <footer class="site-footer">
   <div class="wrap footer-row">
-    <span>CLC Agenda · Código abierto, licencia MIT · <a href={REPO}>GitHub</a></span>
-    <span>No está afiliada a WhatsApp ni a Meta.</span>
+    <span>{copy.footer.license}<a href={REPO}>GitHub</a></span>
+    <span>{copy.footer.notAffiliated}</span>
   </div>
 </footer>

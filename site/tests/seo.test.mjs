@@ -45,10 +45,11 @@ test('seo: robots.txt allows everyone, names the AI crawlers and points to the s
 
 test('seo: sitemap lists both pages with absolute URLs and lastmod', () => {
   const sitemap = read('sitemap.xml');
-  assert.match(sitemap, /<urlset xmlns="http:\/\/www.sitemaps.org\/schemas\/sitemap\/0.9">/);
+  assert.match(sitemap, /<urlset xmlns="http:\/\/www.sitemaps.org\/schemas\/sitemap\/0.9"[ >]/);
   assert.match(sitemap, new RegExp(`<loc>${SITE}/</loc>`));
   assert.match(sitemap, new RegExp(`<loc>${SITE}/instalar</loc>`));
-  assert.equal((sitemap.match(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/g) || []).length, 2);
+  // Spanish and English twins of each page
+  assert.equal((sitemap.match(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/g) || []).length, 4);
 });
 
 test('seo: titles lead with what people search and fit in 60 characters', () => {

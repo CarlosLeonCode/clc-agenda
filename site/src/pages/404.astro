@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 ---
-<Base title="Página no encontrada | CLC Agenda" description="Esta página no existe. Vuelve al inicio o sigue la guía de instalación." path="/404" noindex>
+<Base title="Página no encontrada · Page not found | CLC Agenda" description="Esta página no existe. Vuelve al inicio o sigue la guía de instalación." path="/404" noindex>
   <Nav />
   <main id="contenido" class="not-found wrap">
     <p class="not-found-code">404</p>
@@ -12,6 +12,10 @@ import Footer from '../components/Footer.astro';
     <div class="cta-row">
       <a class="btn" href="/">Ir al inicio</a>
       <a class="btn btn-alt" href="/instalar">Guía de instalación</a>
+    </div>
+    <div class="not-found-en" lang="en">
+      <p class="not-found-subtitle">This page doesn't exist</p>
+      <p class="not-found-lead">The link may be mistyped or the page may be gone. <a href="/en/">Go to the English home page</a> or <a href="/en/install">read the install guide</a>.</p>
     </div>
   </main>
   <Footer />
@@ -22,4 +26,7 @@ import Footer from '../components/Footer.astro';
   .not-found-code { font: 800 clamp(64px, 14vw, 140px)/0.9 var(--display); color: var(--violet-strong); letter-spacing: -0.05em; }
   .not-found-title { font: 800 clamp(32px, 6vw, 56px)/1 var(--display); letter-spacing: -0.04em; margin-top: 18px; }
   .not-found-lead { color: var(--muted); max-width: 520px; margin: 18px auto 28px; }
+  .not-found-en { margin-top: 56px; padding-top: 32px; border-top: 1px solid var(--line, #e6e6ea); }
+  .not-found-subtitle { font: 800 clamp(22px, 4vw, 30px)/1.1 var(--display); letter-spacing: -0.03em; }
+  .not-found-en a { color: var(--violet-strong); }
 </style>

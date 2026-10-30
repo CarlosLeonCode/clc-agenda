@@ -18,7 +18,8 @@ if (video && toggle) {
   const render = () => {
     const playing = !video.paused;
     toggle.setAttribute('aria-pressed', String(!playing));
-    label.textContent = playing ? 'Pausar video' : 'Reproducir video';
+    // Labels come from the markup, so they follow the page language
+    label.textContent = playing ? toggle.dataset.labelPause : toggle.dataset.labelPlay;
     // SVG elements have no .hidden property: toggle the attribute itself
     pauseIcon.toggleAttribute('hidden', !playing);
     playIcon.toggleAttribute('hidden', playing);

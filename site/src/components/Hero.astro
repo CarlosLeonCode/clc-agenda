@@ -1,17 +1,25 @@
 ---
 import { getImage } from 'astro:assets';
-import posterSrc from '../assets/hero-poster.png';
-import { INSTALL_URL, AUTHOR, DEFINITION } from '../data/site.js';
+import posterEs from '../assets/hero-poster.png';
+import posterEn from '../assets/hero-poster-en.png';
+import { AUTHOR } from '../data/site.js';
+import { copyFor } from '../i18n/index.js';
 
-// Promo video (video/ project), re-encoded at 720p without audio for the web
-const poster = await getImage({ src: posterSrc, width: 1280, format: 'webp', quality: 80 });
-const videoBase = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/video/clc-agenda`;
+const { lang = 'es' } = Astro.props;
+const copy = copyFor(lang);
+const { hero } = copy;
+
+// Promo video (video/ project), re-encoded at 720p without audio for the web;
+// each language has its own cut and poster (frame at 24 s)
+const POSTERS = { es: posterEs, en: posterEn };
+const poster = await getImage({ src: POSTERS[lang], width: 1280, format: 'webp', quality: 80 });
+const videoBase = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/video/${hero.video}`;
 
 // Named cursors: people from your groups, drifting toward your address book
 const cursors = [
-  { name: 'Ana · Ventas', color: 'var(--coral)', ink: true, cls: 'cursor-a' },
-  { name: 'Bruno · Comunidad', color: 'var(--violet-strong)', ink: false, cls: 'cursor-b' },
-  { name: 'Tú', color: 'var(--sky)', ink: true, cls: 'cursor-c' }
+  { name: hero.cursors[0], color: 'var(--coral)', ink: true, cls: 'cursor-a' },
+  { name: hero.cursors[1], color: 'var(--violet-strong)', ink: false, cls: 'cursor-b' },
+  { name: hero.cursors[2], color: 'var(--sky)', ink: true, cls: 'cursor-c' }
 ];
 ---
 <section class="hero" aria-labelledby="hero-title">
@@ -22,20 +30,20 @@ const cursors = [
         <span style={`background:${c.color};color:${c.ink ? 'var(--ink)' : '#fff'}`}>{c.name}</span>
       </div>
     ))}
-    <p class="hero-eyebrow" data-fade>Exporta contactos de WhatsApp Web</p>
+    <p class="hero-eyebrow" data-fade>{hero.eyebrow}</p>
     <h1 id="hero-title" class="hero-title">
-      <span class="line" data-line>Tu agenda,</span>{' '}
-      <span class="line" data-line><span class="hl hl-violet" data-hl>fuera</span> de <span class="hl hl-coral" data-hl>WhatsApp.</span></span>
+      <span class="line" data-line>{hero.line1}</span>{' '}
+      <span class="line" data-line><span class="hl hl-violet" data-hl>{hero.hl1}</span>{hero.middle}<span class="hl hl-coral" data-hl>{hero.hl2}</span></span>
     </h1>
-    <p class="lead" data-fade>{DEFINITION}</p>
+    <p class="lead" data-fade>{copy.definition}</p>
     <div class="cta-row" data-fade>
-      <a class="btn" href={INSTALL_URL}>Instalar la extensión</a>
-      <a class="btn btn-alt" href="#como-funciona">Ver cómo funciona</a>
+      <a class="btn" href={copy.routes.install}>{hero.cta}</a>
+      <a class="btn btn-alt" href={`#${copy.ids.how}`}>{hero.ctaAlt}</a>
     </div>
     <p class="credit-row" data-fade>
       <a class="credit" href={AUTHOR.url}>
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 2l7 19 2.5-8L21 10z" fill="var(--coral)" stroke="#fff" stroke-width="1.5" /></svg>
-        <span class="credit-by">Creado por</span>
+        <span class="credit-by">{hero.creditBy}</span>
         <span class="credit-name">{AUTHOR.name}</span>
         <svg class="credit-arrow" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
       </a>
@@ -58,21 +66,21 @@ const cursors = [
           poster={poster.src}
           width="1280"
           height="720"
-          aria-label="Video de 45 segundos sin audio: CLC Agenda saca los contactos de un grupo de WhatsApp Web, filtra a los que no tienes guardados y los exporta a Google Contacts o al celular."
+          aria-label={hero.videoLabel}
         >
           <source src={`${videoBase}.mp4`} type="video/mp4" />
           <source src={`${videoBase}.webm`} type="video/webm" />
         </video>
-        <button type="button" class="video-toggle" data-video-toggle aria-pressed="false" hidden>
+        <button type="button" class="video-toggle" data-video-toggle data-label-pause={hero.pause} data-label-play={hero.play} aria-pressed="false" hidden>
           <svg data-icon="pause" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 5h3v14H7zM14 5h3v14h-3z" fill="currentColor" /></svg>
           <svg data-icon="play" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" hidden><path d="M8 5l11 7-11 7z" fill="currentColor" /></svg>
-          <span class="video-toggle-label" data-video-label>Pausar video</span>
+          <span class="video-toggle-label" data-video-label>{hero.pause}</span>
         </button>
         <span class="click-ripple" aria-hidden="true" data-ripple></span>
       </div>
       <div class="chip chip-1" aria-hidden="true" data-chip>+57 300 000 0000</div>
       <div class="chip chip-2" aria-hidden="true" data-chip>+52 55 0000 0000</div>
-      <div class="chip chip-3" aria-hidden="true" data-chip><b>426</b> sin guardar</div>
+      <div class="chip chip-3" aria-hidden="true" data-chip><b>426</b> {hero.chipUnsaved}</div>
     </div>
   </div>
 </section>

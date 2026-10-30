@@ -75,7 +75,9 @@ test('Install guide: illustrations are decorative; step text carries the meaning
 test('Install guide: neutral Spanish, no third-party resources, external links only where expected', () => {
   assert.doesNotMatch(visibleText, /\b(vos|tenés|podés|elegí|abrí|importá|andá|hacé|guardalo|querés|sabés|descargá|descomprimí|tocá|activá)\b/i);
   const resources = [...html.matchAll(/<(?:script|img|source|link|iframe|video)[^>]*(?:src|href)="([^"]+)"/g)].map(m => m[1]);
-  for (const url of resources) assert.ok(!/^(https?:)?\/\//.test(url) || url.endsWith('/instalar') || url.endsWith('/instalar/'), `third-party resource: ${url}`);
+  // Canonical and hreflang alternates are absolute URLs on this same site
+  const site = (process.env.URL || 'http://localhost:4321').replace(/\/$/, '');
+  for (const url of resources) assert.ok(!/^(https?:)?\/\//.test(url) || url.startsWith(`${site}/`), `third-party resource: ${url}`);
   const anchors = [...html.matchAll(/<a[^>]*href="(https?:[^"]+)"/g)].map(m => m[1]);
   for (const href of anchors) assert.ok(href.startsWith(REPO) || href.startsWith(AUTHOR_URL), `unexpected external link: ${href}`);
 });

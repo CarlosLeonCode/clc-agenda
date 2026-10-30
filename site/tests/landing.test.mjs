@@ -73,8 +73,9 @@ test('Landing: every image and video has a text alternative, width and height', 
 test('Landing: no third-party resources; external links only to GitHub and the author', () => {
   const resources = [...html.matchAll(/<(?:script|img|source|link|iframe|video)[^>]*(?:src|href|srcset)="([^"]+)"/g)].map(m => m[1]);
   for (const url of resources) {
-    const isCanonical = url === `${SITE}/`;
-    assert.ok(isCanonical || !/^(https?:)?\/\//.test(url), `third-party resource: ${url}`);
+    // Canonical and hreflang alternates are absolute URLs on this same site
+    const isOwnSite = url.startsWith(`${SITE}/`);
+    assert.ok(isOwnSite || !/^(https?:)?\/\//.test(url), `third-party resource: ${url}`);
   }
   assert.doesNotMatch(css, /url\(\s*['"]?(https?:)?\/\//, 'CSS loads nothing remote');
   assert.doesNotMatch(css, /@import\s+url\(\s*['"]?https?:/);

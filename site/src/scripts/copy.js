@@ -1,5 +1,6 @@
 // Copy buttons on the install guide. If the clipboard is unavailable, select the
 // text instead so the person can copy it by hand; either way, announce the result.
+// Messages live in data attributes, so they follow the page language.
 
 const status = document.querySelector('[data-copy-status]');
 
@@ -28,10 +29,10 @@ for (const button of document.querySelectorAll('[data-copy]')) {
   button.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(value);
-      announce(`Copiado: ${value}. Ahora pégalo en la barra de direcciones.`, 'Copiado');
+      announce(status.dataset.copied.replace('{value}', value), button.dataset.done);
     } catch {
       selectSource();
-      announce(`No se pudo copiar solo. La dirección quedó seleccionada: cópiala con Ctrl+C o Cmd+C.`, 'Copiar');
+      announce(status.dataset.failed, original);
     }
   });
 }
