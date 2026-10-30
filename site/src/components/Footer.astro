@@ -2,12 +2,14 @@
 import { REPO } from '../data/site.js';
 import { copyFor } from '../i18n/index.js';
 
-const { lang = 'es' } = Astro.props;
+// `leads`: pages that load the new-version card get a footer control that opens it
+const { lang = 'es', leads = false } = Astro.props;
 const copy = copyFor(lang);
 ---
 <footer class="site-footer">
   <div class="wrap footer-row">
     <span>{copy.footer.license}<a href={REPO}>GitHub</a></span>
+    {leads && <button type="button" class="footer-leads" data-leads-open>{copy.footer.leads}</button>}
     <span>{copy.footer.notAffiliated}</span>
   </div>
 </footer>

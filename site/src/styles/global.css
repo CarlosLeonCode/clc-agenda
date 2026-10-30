@@ -258,6 +258,20 @@ ul, ol { padding: 0; list-style: none; }
 .final-title { font: 800 clamp(52px, 9vw, 104px)/0.92 var(--display); letter-spacing: -0.045em; margin-bottom: 30px; }
 .site-footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
 .footer-row { display: flex; flex-direction: column; gap: 8px; padding-top: 26px; padding-bottom: 26px; }
+/* Opens the new-version email card; reads as a link */
+.footer-leads {
+  align-self: flex-start;
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--violet-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
 
 @media (min-width: 640px) {
   .wrap { padding-inline: 32px; }

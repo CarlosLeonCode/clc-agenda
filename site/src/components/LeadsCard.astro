@@ -1,25 +1,33 @@
 ---
-// Opt-in "new version" email (clc-leads). Hidden until a download happened or the
-// person asks for it; never blocks the guide. src/scripts/leads.js drives it.
+// Opt-in "new version" email (clc-leads). Hidden until a value moment (a download,
+// or real engagement on the home page) or until the person asks for it; never blocks
+// the page. src/scripts/leads.js drives it. One card per page.
+// variant: "inline" sits in the guide's flow on small screens; "floating" is a corner
+// card on large screens and a bottom sheet on phones.
 import { LEADS } from '../data/site.js';
 import { copyFor } from '../i18n/index.js';
 
-const { lang = 'es' } = Astro.props;
-const t = copyFor(lang).install.leads;
+const { lang = 'es', variant = 'inline', source = 'install-page', invite = true } = Astro.props;
+const copy = copyFor(lang);
+const t = copy.install.leads;
 ---
-<p class="leads-invite">
-  {t.invite} <button type="button" class="leads-open" data-leads-open>{t.open}</button>
-</p>
+{invite && (
+  <p class="leads-invite">
+    {t.invite} <button type="button" class="leads-open" data-leads-open>{t.open}</button>
+  </p>
+)}
 
 <section
   class="leads-card"
   data-leads-card
+  data-leads-variant={variant}
   role="dialog"
   aria-modal="false"
   aria-labelledby="leads-title"
   hidden
   data-project={LEADS.project}
   data-endpoint={LEADS.endpoint}
+  data-source={source}
   data-lang={lang}
   data-submit={t.submit}
   data-submitting={t.submitting}
@@ -29,7 +37,12 @@ const t = copyFor(lang).install.leads;
   <button type="button" class="leads-close" data-leads-close aria-label={t.close}>
     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></svg>
   </button>
-  <div data-leads-form-view>
+  <!-- Automatic prompts start as this one-line question; the form opens only on a yes -->
+  <div class="leads-compact" data-leads-compact-view>
+    <p class="leads-compact-text" data-leads-compact-text>{t.compactText}</p>
+    <button type="button" class="btn btn-sm leads-expand" data-leads-expand>{t.compactYes}</button>
+  </div>
+  <div class="leads-full" data-leads-form-view>
     <h3 id="leads-title" class="leads-title">{t.title}</h3>
     <p class="leads-intro">{t.intro}</p>
     <form class="leads-form" data-leads-form novalidate>
@@ -79,6 +92,37 @@ const t = copyFor(lang).install.leads;
     text-align: left;
   }
   .leads-card[hidden], .leads-card [hidden] { display: none; }
+
+  /* Floating variant: a bottom sheet on phones (scrolls inside, X always visible) */
+  .leads-card[data-leads-variant="floating"] {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 40;
+    max-height: min(78vh, 560px);
+    margin: 0;
+    overflow-y: auto;
+    box-shadow: inset 0 0 0 2px var(--ink), 0 8px 0 -2px var(--ink), 0 24px 48px -24px rgba(15, 15, 16, .35);
+  }
+  /* Phones: keep the sheet short; the title and the consent sentence already say what it is */
+  @media (max-width: 639px) {
+    .leads-card[data-leads-variant="floating"] .leads-intro { display: none; }
+  }
+  /* Compact state: a one-line question with a yes button, small enough to sit in a corner */
+  .leads-compact { display: none; }
+  .leads-card--compact .leads-compact { display: flex; align-items: center; gap: 12px; padding-right: 32px; }
+  .leads-card--compact .leads-full, .leads-card--compact .leads-status { display: none; }
+  .leads-compact-text { margin: 0; font-weight: 600; font-size: 15px; line-height: 1.35; }
+  .leads-expand { flex: none; }
+
+  @media (min-width: 640px) {
+    .leads-card[data-leads-variant="floating"] { left: auto; right: 24px; bottom: 24px; width: 380px; }
+    /* Set by leads.js when the bottom right would cover the nav, video control or hero buttons */
+    .leads-card[data-leads-variant="floating"].leads-card--left { left: 24px; right: auto; }
+    .leads-card[data-leads-variant="floating"].leads-card--top { top: 96px; bottom: auto; }
+  }
+
   @media (min-width: 1024px) {
     .leads-card {
       position: fixed;
@@ -89,6 +133,16 @@ const t = copyFor(lang).install.leads;
       margin: 0;
       box-shadow: inset 0 0 0 2px var(--ink), 0 8px 0 -2px var(--ink), 0 24px 48px -24px rgba(15, 15, 16, .35);
     }
+  }
+
+  /* Corner card and bottom sheet slide in; the inline card just appears */
+  .leads-card[data-leads-variant="floating"]:not([hidden]) { animation: leads-in .28s ease-out; }
+  @media (min-width: 1024px) {
+    .leads-card:not([hidden]) { animation: leads-in .28s ease-out; }
+  }
+  @keyframes leads-in { from { opacity: 0; transform: translateY(16px); } }
+  @media (prefers-reduced-motion: reduce) {
+    .leads-card:not([hidden]), .leads-card[data-leads-variant="floating"]:not([hidden]) { animation: none; }
   }
 
   .leads-close {

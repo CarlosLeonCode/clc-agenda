@@ -36,7 +36,7 @@ test('leads: the project and endpoint live in one place', () => {
 test('leads: the client uses the headless vanilla API, counts downloads and skips the details step', () => {
   const script = read('src/scripts/leads.js');
   assert.match(script, /from '@carlosleoncode\/lead-capture\/vanilla'/);
-  assert.match(script, /triggerEvents: \['download'\]/);
+  assert.match(script, /triggerEvents: \['download', 'engaged'\]/);
   assert.match(script, /recordEvent\('download'\)/);
   assert.match(script, /\.skip\(\)/, 'name, role and country are never asked');
 });
@@ -87,3 +87,62 @@ for (const [lang, path] of Object.entries(PAGES)) {
     assert.doesNotMatch(text, /\b(gratis|free)\b/i);
   });
 }
+
+// Home pages: the card can also appear on its own after real engagement
+const HOMES = { es: 'dist/index.html', en: 'dist/en/index.html' };
+const FOOTER_LABEL = { es: 'Recibir avisos de versiones nuevas', en: 'Get new-version emails' };
+const ALL_PAGES = { ...PAGES, ...Object.fromEntries(Object.entries(HOMES).map(([l, p]) => [`home-${l}`, p])) };
+
+for (const [lang, path] of Object.entries(HOMES)) {
+  test(`leads home (${lang}): the card is on the page, hidden, floating, and the final CTA counts as engagement`, () => {
+    const html = read(path);
+    const card = tagWith(html, 'data-leads-card');
+    assert.ok(card, 'card markup present on the home page');
+    assert.match(card, /\bhidden\b/);
+    assert.match(card, /data-leads-variant="floating"/);
+    assert.match(card, /data-source="home"/);
+    assert.match(tagWith(html, 'data-leads-engage'), /<section[^>]*class="final"/);
+  });
+
+  test(`leads home (${lang}): the page loads the shared leads script`, () => {
+    const page = read(lang === 'es' ? 'src/pages/index.astro' : 'src/pages/en/index.astro');
+    assert.match(page, /scripts\/leads\.js/);
+  });
+}
+
+for (const [name, path] of Object.entries(ALL_PAGES)) {
+  test(`leads (${name}): the footer has a manual control that opens the card`, () => {
+    const html = read(path);
+    const footer = html.match(/<footer[\s\S]*?<\/footer>/)?.[0] || '';
+    const control = tagWith(footer, 'data-leads-open');
+    assert.match(control, /^<button[^>]*type="button"/, 'footer control is a button');
+    const lang = name.endsWith('en') ? 'en' : 'es';
+    assert.ok(footer.includes(FOOTER_LABEL[lang]), `footer label in ${lang}`);
+  });
+}
+
+test('leads: engagement on the home page counts 20 s of played video or reaching the final CTA, once per page load', () => {
+  const script = read('src/scripts/leads.js');
+  assert.match(script, /recordEvent\('engaged'\)/);
+  assert.match(script, /'timeupdate'/);
+  assert.match(script, /ENGAGED_VIDEO_SECONDS = 20\b/);
+  assert.match(script, /seeking/, 'jumps in the video are not counted as watching');
+  assert.match(script, /IntersectionObserver/);
+  assert.match(script, /\[data-leads-engage\]/);
+});
+
+test('leads: the automatic prompt starts compact and only expands on a yes', () => {
+  const expected = {
+    es: { text: '¿Te avisamos cuando haya una versión nueva?', yes: 'Sí, avísame' },
+    en: { text: 'Want an email when there is a new version?', yes: 'Yes, notify me' }
+  };
+  for (const [lang, file] of Object.entries(HOMES)) {
+    const html = read(file);
+    assert.equal(textOf(html, 'data-leads-compact-text'), expected[lang].text, `${lang} compact question`);
+    assert.equal(textOf(html, 'data-leads-expand'), expected[lang].yes, `${lang} expand button`);
+  }
+  const script = read('src/scripts/leads.js');
+  assert.match(script, /leads-card--compact/);
+  assert.match(script, /trigger === 'auto'/);
+  assert.match(script, /data-leads-expand/);
+});

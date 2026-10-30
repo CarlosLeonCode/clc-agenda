@@ -5,7 +5,7 @@ export const REPO = 'https://github.com/CarlosLeonCode/clc-agenda';
 // Every "Instalar" button opens the step-by-step guide; the guide links the download
 export const INSTALL_URL = es.routes.install;
 export const DOWNLOAD_URL = `${REPO}/releases/latest/download/clc-agenda.zip`;
-// clc-leads: opt-in "tell me about new versions" email on the install guide.
+// clc-leads: opt-in "tell me about new versions" email on the home pages and the guide.
 // The endpoint must list this project in ALLOWED_PROJECTS and the site's origin in ALLOWED_ORIGINS.
 export const LEADS = {
   project: 'clc-agenda',

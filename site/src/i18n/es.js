@@ -123,7 +123,7 @@ export default {
   },
   faq: { title: 'Preguntas frecuentes', items: FAQ },
   finalCta: { title: 'Recupera tu agenda.', button: 'Instalar la extensión' },
-  footer: { license: 'CLC Agenda · Código abierto, licencia MIT · ', notAffiliated: 'No está afiliada a WhatsApp ni a Meta.' },
+  footer: { license: 'CLC Agenda · Código abierto, licencia MIT · ', notAffiliated: 'No está afiliada a WhatsApp ni a Meta.', leads: 'Recibir avisos de versiones nuevas' },
   install: {
     title: 'Cómo instalar CLC Agenda en Chrome paso a paso',
     description: 'Instala CLC Agenda en tu navegador en 7 pasos simples, sin saber de tecnología: descarga, descomprime y carga la extensión en Chrome, Brave, Edge u Opera.',
@@ -168,6 +168,8 @@ export default {
       consent: 'Acepto que CLC Agenda guarde mi correo para avisarme de versiones nuevas. Puedo darme de baja cuando quiera.',
       privacy: 'Solo lo usamos para avisarte de versiones nuevas. Nada más.',
       submit: 'Avísame',
+      compactText: '¿Te avisamos cuando haya una versión nueva?',
+      compactYes: 'Sí, avísame',
       submitting: 'Enviando…',
       success: 'Listo, te avisaremos.',
       close: 'Cerrar',

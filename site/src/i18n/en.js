@@ -121,7 +121,7 @@ export default {
   },
   faq: { title: 'Frequently asked questions', items: FAQ },
   finalCta: { title: 'Take back your contacts.', button: 'Install the extension' },
-  footer: { license: 'CLC Agenda · Open source, MIT license · ', notAffiliated: 'Not affiliated with WhatsApp or Meta.' },
+  footer: { license: 'CLC Agenda · Open source, MIT license · ', notAffiliated: 'Not affiliated with WhatsApp or Meta.', leads: 'Get new-version emails' },
   install: {
     title: 'How to install CLC Agenda in Chrome, step by step',
     description: 'Install CLC Agenda in your browser in 7 simple steps, no tech skills needed: download, unzip and load the extension in Chrome, Brave, Edge or Opera.',
@@ -166,6 +166,8 @@ export default {
       consent: 'I agree that CLC Agenda stores my email to tell me about new versions. I can unsubscribe at any time.',
       privacy: 'We only use it to tell you about new versions. Nothing else.',
       submit: 'Notify me',
+      compactText: 'Want an email when there is a new version?',
+      compactYes: 'Yes, notify me',
       submitting: 'Sending…',
       success: 'Done, we\'ll let you know.',
       close: 'Close',

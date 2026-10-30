@@ -8,6 +8,7 @@ import Panels from '../components/Panels.astro';
 import Faq from '../components/Faq.astro';
 import FinalCta from '../components/FinalCta.astro';
 import Footer from '../components/Footer.astro';
+import LeadsCard from '../components/LeadsCard.astro';
 import { appNodes } from '../data/structured.js';
 ---
 <Base lang="es" page="home" graph={appNodes(Astro.site, 'es')}>
@@ -20,9 +21,11 @@ import { appNodes } from '../data/structured.js';
     <Faq lang="es" />
     <FinalCta lang="es" />
   </main>
-  <Footer lang="es" />
+  <Footer lang="es" leads />
+  <LeadsCard lang="es" variant="floating" source="home" invite={false} />
   <script>
     import '../scripts/motion.js';
     import '../scripts/hero-video.js';
+    import '../scripts/leads.js';
   </script>
 </Base>
