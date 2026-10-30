@@ -158,6 +158,30 @@ export default {
       copied: 'Copiado: {value}. Ahora pégalo en la barra de direcciones.',
       failed: 'No se pudo copiar solo. La dirección quedó seleccionada: cópiala con Ctrl+C o Cmd+C.'
     },
+    leads: {
+      invite: '¿Quieres enterarte de versiones nuevas?',
+      open: 'Avísame',
+      title: 'Te avisamos cuando haya una versión nueva',
+      intro: 'Instalada desde un archivo, la extensión no se actualiza sola. Deja tu correo y te escribimos cuando salga una versión nueva.',
+      emailLabel: 'Tu correo',
+      placeholder: 'nombre@correo.com',
+      consent: 'Acepto que CLC Agenda guarde mi correo para avisarme de versiones nuevas. Puedo darme de baja cuando quiera.',
+      privacy: 'Solo lo usamos para avisarte de versiones nuevas. Nada más.',
+      submit: 'Avísame',
+      submitting: 'Enviando…',
+      success: 'Listo, te avisaremos.',
+      close: 'Cerrar',
+      errors: {
+        'email.required': 'Escribe tu correo.',
+        'email.invalid': 'Revisa tu correo: parece que le falta algo.',
+        'email.too_long': 'Ese correo es demasiado largo.',
+        'email.not_allowed': 'No podemos usar ese correo. Prueba con otro.',
+        'consent.required': 'Marca la casilla para que podamos avisarte.',
+        rate_limited: 'Demasiados intentos seguidos. Prueba de nuevo en un minuto.',
+        network: 'No hay conexión. Revisa tu internet y vuelve a intentarlo.',
+        server: 'Algo falló de nuestro lado. Vuelve a intentarlo más tarde.'
+      }
+    },
     trouble: {
       title: 'Si algo no funciona',
       items: [

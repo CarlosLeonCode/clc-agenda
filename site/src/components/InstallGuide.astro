@@ -1,6 +1,7 @@
 ---
 import { DOWNLOAD_URL } from '../data/site.js';
 import { copyFor } from '../i18n/index.js';
+import LeadsCard from './LeadsCard.astro';
 
 const { lang = 'es' } = Astro.props;
 const copy = copyFor(lang);
@@ -22,8 +23,9 @@ const EXTENSIONS_URL = 'chrome://extensions';
         <span class="step-num" aria-hidden="true">1</span>
         <h2>{steps[0].name}</h2>
         <p set:html={guide.body.download} />
-        <a class="btn download-btn" href={DOWNLOAD_URL}>{guide.download}</a>
+        <a class="btn download-btn" href={DOWNLOAD_URL} data-leads-event="download">{guide.download}</a>
         <p class="hint">{guide.body.downloadHint}</p>
+        <LeadsCard lang={lang} />
       </div>
       <div class="illo" aria-hidden="true">
         <div class="illo-file">

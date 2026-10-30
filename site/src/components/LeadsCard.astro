@@ -1,0 +1,137 @@
+---
+// Opt-in "new version" email (clc-leads). Hidden until a download happened or the
+// person asks for it; never blocks the guide. src/scripts/leads.js drives it.
+import { LEADS } from '../data/site.js';
+import { copyFor } from '../i18n/index.js';
+
+const { lang = 'es' } = Astro.props;
+const t = copyFor(lang).install.leads;
+---
+<p class="leads-invite">
+  {t.invite} <button type="button" class="leads-open" data-leads-open>{t.open}</button>
+</p>
+
+<section
+  class="leads-card"
+  data-leads-card
+  role="dialog"
+  aria-modal="false"
+  aria-labelledby="leads-title"
+  hidden
+  data-project={LEADS.project}
+  data-endpoint={LEADS.endpoint}
+  data-lang={lang}
+  data-submit={t.submit}
+  data-submitting={t.submitting}
+  data-success={t.success}
+  data-messages={JSON.stringify(t.errors)}
+>
+  <button type="button" class="leads-close" data-leads-close aria-label={t.close}>
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></svg>
+  </button>
+  <div data-leads-form-view>
+    <h3 id="leads-title" class="leads-title">{t.title}</h3>
+    <p class="leads-intro">{t.intro}</p>
+    <form class="leads-form" data-leads-form novalidate>
+      <label class="leads-label" for="leads-email">{t.emailLabel}</label>
+      <input id="leads-email" class="leads-input" type="email" name="email" required autocomplete="email" inputmode="email" placeholder={t.placeholder} aria-describedby="leads-email-error" data-leads-email />
+      <p id="leads-email-error" class="leads-error" data-leads-error="email"></p>
+      <label class="leads-consent">
+        <input type="checkbox" name="consent" required aria-describedby="leads-consent-error" data-leads-consent />
+        <span data-leads-consent-text>{t.consent}</span>
+      </label>
+      <p id="leads-consent-error" class="leads-error" data-leads-error="consent"></p>
+      <div class="leads-trap" aria-hidden="true">
+        <label>Website <input type="text" name="website" tabindex="-1" autocomplete="off" data-leads-honeypot /></label>
+      </div>
+      <button type="submit" class="btn leads-submit" data-leads-submit>{t.submit}</button>
+      <p class="leads-privacy">{t.privacy}</p>
+    </form>
+  </div>
+  <p class="leads-status" aria-live="polite" data-leads-status></p>
+</section>
+
+<style>
+  .leads-invite { margin-top: 14px; font-size: 15px; color: var(--muted); }
+  .leads-open {
+    appearance: none;
+    border: 0;
+    background: none;
+    padding: 0;
+    font: inherit;
+    font-weight: 700;
+    color: var(--violet-strong);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1.5px;
+    cursor: pointer;
+  }
+
+  /* In the flow on small screens (never on top of the download button);
+     a floating card at the bottom right on large ones */
+  .leads-card {
+    position: relative;
+    margin-top: 16px;
+    padding: 22px 20px 18px;
+    border-radius: var(--radius-md);
+    background: var(--paper);
+    box-shadow: inset 0 0 0 2px var(--ink), 0 6px 0 -2px var(--ink);
+    text-align: left;
+  }
+  .leads-card[hidden], .leads-card [hidden] { display: none; }
+  @media (min-width: 1024px) {
+    .leads-card {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 40;
+      width: 380px;
+      margin: 0;
+      box-shadow: inset 0 0 0 2px var(--ink), 0 8px 0 -2px var(--ink), 0 24px 48px -24px rgba(15, 15, 16, .35);
+    }
+  }
+
+  .leads-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .leads-close:hover { background: var(--lilac); }
+
+  .leads-title { margin: 0 40px 8px 0; font: 800 20px/1.15 var(--display); letter-spacing: -.02em; color: var(--ink); }
+  .leads-intro { margin: 0 0 14px; font-size: 15px; line-height: 1.5; color: var(--muted); }
+  .leads-form { display: grid; gap: 6px; }
+  .leads-label { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .leads-input {
+    min-height: 46px;
+    padding: 10px 14px;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    font: inherit;
+    font-size: 16px;
+    color: var(--ink);
+    background: var(--paper);
+  }
+  .leads-input[aria-invalid] { border-color: #C2253A; }
+  .leads-consent { display: flex; gap: 10px; align-items: flex-start; margin-top: 6px; font-size: 14px; line-height: 1.45; color: var(--ink); cursor: pointer; }
+  .leads-consent input { flex: none; width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--violet-strong); }
+  .leads-error { min-height: 0; margin: 0; font-size: 13px; font-weight: 600; color: #C2253A; }
+  .leads-error:empty { display: none; }
+  .leads-submit { justify-self: start; margin-top: 8px; border: 0; cursor: pointer; }
+  .leads-submit:disabled { opacity: .6; cursor: progress; }
+  .leads-privacy { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+  .leads-status { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
+  .leads-status:empty { display: none; }
+
+  /* Bots fill this; people never see or reach it */
+  .leads-trap { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>

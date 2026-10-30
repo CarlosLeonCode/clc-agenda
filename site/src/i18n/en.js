@@ -156,6 +156,30 @@ export default {
       copied: 'Copied: {value}. Now paste it into the address bar.',
       failed: 'Couldn\'t copy it automatically. The address is selected: copy it with Ctrl+C or Cmd+C.'
     },
+    leads: {
+      invite: 'Want to hear about new versions?',
+      open: 'Notify me',
+      title: 'We\'ll tell you when a new version is out',
+      intro: 'Installed from a file, the extension doesn\'t update itself. Leave your email and we\'ll write when a new version ships.',
+      emailLabel: 'Your email',
+      placeholder: 'name@email.com',
+      consent: 'I agree that CLC Agenda stores my email to tell me about new versions. I can unsubscribe at any time.',
+      privacy: 'We only use it to tell you about new versions. Nothing else.',
+      submit: 'Notify me',
+      submitting: 'Sending…',
+      success: 'Done, we\'ll let you know.',
+      close: 'Close',
+      errors: {
+        'email.required': 'Enter your email.',
+        'email.invalid': 'Check your email: something seems to be missing.',
+        'email.too_long': 'That email is too long.',
+        'email.not_allowed': 'We can\'t use that email. Try another one.',
+        'consent.required': 'Tick the box so we can let you know.',
+        rate_limited: 'Too many attempts in a row. Try again in a minute.',
+        network: 'You seem to be offline. Check your connection and try again.',
+        server: 'Something went wrong on our side. Try again later.'
+      }
+    },
     trouble: {
       title: 'If something doesn\'t work',
       items: [
