@@ -2,11 +2,13 @@ import React from 'react';
 import { AbsoluteFill, interpolate, useCurrentFrame } from 'remotion';
 import { COLORS, FONT, SCENES } from '../theme.js';
 import { headline, Line, LogoMark, SceneFade, useReveal, Words } from '../components.jsx';
+import { COPY } from '../copy.js';
 
 const center = { justifyContent: 'center', alignItems: 'center', textAlign: 'center' };
 
 /** Scene 1: the problem in one sentence. */
-export function Hook() {
+export function Hook({ lang = 'es' }) {
+  const [first, second] = COPY[lang].hook;
   const frame = useCurrentFrame();
   // The first line steps back once the answer arrives
   const dim = interpolate(frame, [56, 72], [1, 0.32], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
@@ -15,10 +17,10 @@ export function Hook() {
       <AbsoluteFill style={center}>
         <div style={{ ...headline, fontSize: 100 }}>
           <div style={{ opacity: dim }}>
-            <Words text="Tus contactos viven en WhatsApp." delay={8} stagger={5} />
+            <Words text={first} delay={8} stagger={5} />
           </div>
           <div style={{ marginTop: 18 }}>
-            <Words text="Tu agenda, no." delay={60} stagger={6} />
+            <Words text={second} delay={60} stagger={6} />
           </div>
         </div>
       </AbsoluteFill>
@@ -35,17 +37,16 @@ const CHIPS = [
 ];
 
 /** Scene 2: unsaved numbers pile up. */
-export function Problem() {
+export function Problem({ lang = 'es' }) {
+  const { lines, sub } = COPY[lang].problem;
   return (
     <SceneFade duration={SCENES.problem.duration}>
       <AbsoluteFill style={{ padding: '150px 0 0 150px' }}>
         <div style={{ ...headline, fontSize: 96 }}>
-          <Line delay={4}>Grupos.</Line>
-          <Line delay={12}>Chats.</Line>
-          <Line delay={20}>Etiquetas.</Line>
+          {lines.map((line, i) => <Line key={line} delay={4 + i * 8}>{line}</Line>)}
         </div>
         <div style={{ ...headline, fontSize: 56, fontWeight: 500, color: COLORS.muted, marginTop: 44, letterSpacing: '-0.025em' }}>
-          <Words text="Cientos de números sin guardar." delay={46} stagger={4} />
+          <Words text={sub} delay={46} stagger={4} />
         </div>
       </AbsoluteFill>
       <ChipPile />
@@ -96,7 +97,7 @@ function Chip({ label, x, y, delay }) {
 }
 
 /** Scene 3: the mark draws in, the name rises. */
-export function LogoReveal() {
+export function LogoReveal({ lang = 'es' }) {
   const draw = useReveal(4, 40);
   return (
     <SceneFade duration={SCENES.logo.duration} fadeIn={1}>
@@ -106,7 +107,7 @@ export function LogoReveal() {
         </div>
         <Line delay={18} style={{ ...headline, fontSize: 132, marginTop: 40 }}>CLC Agenda</Line>
         <Line delay={30} style={{ ...headline, fontSize: 44, fontWeight: 500, color: COLORS.muted, marginTop: 18, letterSpacing: '-0.02em' }}>
-          Tu agenda, sin depender de WhatsApp.
+          {COPY[lang].tagline}
         </Line>
       </AbsoluteFill>
     </SceneFade>

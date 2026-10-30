@@ -2,20 +2,23 @@ import React from 'react';
 import { AbsoluteFill, Easing, Img, interpolate, staticFile, useCurrentFrame } from 'remotion';
 import { COLORS, FONT, SCENES } from '../theme.js';
 import { ClickRing, Cursor, headline, Icon, Line, SceneFade, useReveal } from '../components.jsx';
-import targets from '../../public/ui/targets.json';
+import { COPY } from '../copy.js';
+import targetsEs from '../../public/ui/targets.json';
+import targetsEn from '../../public/ui/en/targets.json';
 
 // Window geometry (frame px). The browser viewport shows a 1100x760 CSS crop
 // of the 1440x900 capture page, scaled by S; the overlay sits at (170, 40) CSS.
 const S = 1.1;
 const WIN = { x: 600, y: 97, width: 1100 * S, bar: 50 };
 const VIEW = { width: 1100 * S, height: 760 * S };
-const MODAL = { x: 170 * S, y: 40 * S, width: targets.modal.width * S, height: targets.modal.height * S };
+const MODAL = { x: 170 * S, y: 40 * S, width: targetsEs.modal.width * S, height: targetsEs.modal.height * S };
 
-// Click points in viewport px, derived from the real capture
+// Click points in viewport px, derived from each language's real capture
 const aim = (t, fx = 0.5) => ({ x: MODAL.x + (t.x + t.width * fx) * S, y: MODAL.y + (t.y + t.height / 2) * S });
-const ROW = aim(targets.groupRow, 0.3);
-const CHIP = aim(targets.unsavedChip, 0.86);
-const GOOGLE = aim(targets.googleButton);
+const points = (targets) => ({ ROW: aim(targets.groupRow, 0.3), CHIP: aim(targets.unsavedChip, 0.86), GOOGLE: aim(targets.googleButton) });
+const POINTS = { es: points(targetsEs), en: points(targetsEn) };
+// Captures live in public/ui (Spanish) and public/ui/en
+const UI_DIR = { es: 'ui', en: 'ui/en' };
 const START = { x: VIEW.width - 120, y: VIEW.height - 60 };
 
 // Local timeline (frames inside this scene)
@@ -34,7 +37,7 @@ const ease = Easing.bezier(0.45, 0, 0.2, 1);
 const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' };
 const lerp = (frame, range, a, b) => interpolate(frame, range, [a, b], { ...clamp, easing: ease });
 
-function cursorAt(frame) {
+function cursorAt(frame, { ROW, CHIP, GOOGLE }) {
   const legs = [
     [T.moveToRow, START, ROW],
     [T.moveToChip, ROW, CHIP],
@@ -50,23 +53,25 @@ function cursorAt(frame) {
 const press = (frame, at) => interpolate(frame, [at, at + 4, at + 9], [0, 1, 0], clamp);
 const ring = (frame, at) => interpolate(frame, [at + 2, at + 20], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'extend' });
 
-export function Product() {
+export function Product({ lang = 'es' }) {
   const frame = useCurrentFrame();
+  const copy = COPY[lang];
+  const at = POINTS[lang];
   return (
     <SceneFade duration={SCENES.product.duration} fadeOut={20}>
-      <StepLabels frame={frame} />
-      <SaveTargets frame={frame} />
-      <BrowserWindow frame={frame} />
-      <FileCard frame={frame} />
+      <StepLabels frame={frame} labels={copy.steps} />
+      <SaveTargets frame={frame} labels={copy.targets} />
+      <BrowserWindow frame={frame} at={at} dir={UI_DIR[lang]} />
+      <FileCard frame={frame} at={at} name={copy.file} />
     </SceneFade>
   );
 }
 
-function StepLabels({ frame }) {
+function StepLabels({ frame, labels }) {
   const steps = [
-    { n: '1', text: 'Elige\nde dónde', from: 0, to: T.step2 },
-    { n: '2', text: 'Revisa\nquién falta', from: T.step2, to: T.step3 },
-    { n: '3', text: 'Guárdalos\ndonde quieras', from: T.step3, to: SCENES.product.duration + 1 }
+    { n: '1', text: labels[0], from: 0, to: T.step2 },
+    { n: '2', text: labels[1], from: T.step2, to: T.step3 },
+    { n: '3', text: labels[2], from: T.step3, to: SCENES.product.duration + 1 }
   ];
   return (
     <div style={{ position: 'absolute', left: 120, top: 300, width: 460 }}>
@@ -85,7 +90,8 @@ function StepLabels({ frame }) {
   );
 }
 
-function BrowserWindow({ frame }) {
+function BrowserWindow({ frame, at, dir }) {
+  const { CHIP } = at;
   const enter = useReveal(0, 30);
   const zoom = frame < T.zoomOut[0]
     ? lerp(frame, [0, T.step2], 1, 1.02) + (frame >= T.zoomIn[0] ? lerp(frame, T.zoomIn, 0, 0.04) : 0)
@@ -115,8 +121,8 @@ function BrowserWindow({ frame }) {
       <div style={{ position: 'relative', width: VIEW.width, height: VIEW.height, overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, transform: `scale(${zoom})`, transformOrigin: `${originX}px ${originY}px` }}>
           <ChatSkeleton />
-          <Overlay frame={frame} />
-          <PointerLayer frame={frame} />
+          <Overlay frame={frame} dir={dir} />
+          <PointerLayer frame={frame} at={at} />
         </div>
       </div>
     </div>
@@ -161,15 +167,15 @@ function ChatSkeleton() {
   );
 }
 
-function Overlay({ frame }) {
+function Overlay({ frame, dir }) {
   const open = interpolate(frame, [T.open, T.open + 16], [0, 1], { ...clamp, easing: ease });
   // Real captures, swapped at the moment each click lands
   const layers = [
-    { src: 'ui/source.png', in: -1 },
-    { src: 'ui/source-loading.png', in: T.clickRow + 4 },
-    { src: 'ui/results.png', in: T.results },
-    { src: 'ui/results-unsaved.png', in: T.clickChip + 4 },
-    { src: 'ui/export-hover.png', in: T.hoverGoogle }
+    { src: `${dir}/source.png`, in: -1 },
+    { src: `${dir}/source-loading.png`, in: T.clickRow + 4 },
+    { src: `${dir}/results.png`, in: T.results },
+    { src: `${dir}/results-unsaved.png`, in: T.clickChip + 4 },
+    { src: `${dir}/export-hover.png`, in: T.hoverGoogle }
   ];
   return (
     <>
@@ -195,8 +201,9 @@ function Overlay({ frame }) {
   );
 }
 
-function PointerLayer({ frame }) {
-  const pos = cursorAt(frame);
+function PointerLayer({ frame, at }) {
+  const { ROW, CHIP, GOOGLE } = at;
+  const pos = cursorAt(frame, at);
   const visible = interpolate(frame, [T.moveToRow[0] - 8, T.moveToRow[0], T.fly[0], T.fly[0] + 10], [0, 1, 1, 0], clamp);
   const pressed = press(frame, T.clickRow) + press(frame, T.clickChip) + press(frame, T.clickGoogle);
   return (
@@ -213,7 +220,8 @@ function PointerLayer({ frame }) {
 const LAND = { x: 120, y: 520 };
 const CARD = { width: 456, height: 84 };
 
-function FileCard({ frame }) {
+function FileCard({ frame, at, name }) {
+  const { GOOGLE } = at;
   if (frame < T.fly[0]) return null;
   const from = { x: WIN.x + GOOGLE.x - CARD.width / 2, y: WIN.y + WIN.bar + GOOGLE.y - CARD.height / 2 };
   const t = interpolate(frame, T.fly, [0, 1], { ...clamp, easing: ease });
@@ -245,16 +253,16 @@ function FileCard({ frame }) {
     >
       <div style={{ flexShrink: 0, display: "flex" }}><Icon name="file" size={36} /></div>
       <span style={{ fontSize: 17.5, fontWeight: 500, color: COLORS.ink, letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
-        equipo_ventas_latam_google_contacts.csv
+        {name}
       </span>
     </div>
   );
 }
 
-function SaveTargets({ frame }) {
+function SaveTargets({ frame, labels }) {
   const items = [
-    { icon: 'contacts', label: 'Google Contacts', delay: T.step3 + 20 },
-    { icon: 'phone', label: 'Celular', delay: T.step3 + 26 }
+    { icon: 'contacts', label: labels[0], delay: T.step3 + 20 },
+    { icon: 'phone', label: labels[1], delay: T.step3 + 26 }
   ];
   return (
     <div style={{ position: 'absolute', left: 120, top: 640, display: 'flex', gap: 24 }}>
@@ -312,4 +320,4 @@ function SaveTarget({ icon, label, delay, frame }) {
   );
 }
 
-export const _debug = { ROW, CHIP, GOOGLE, MODAL, T };
+export const _debug = { POINTS, MODAL, T };

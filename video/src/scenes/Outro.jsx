@@ -2,21 +2,18 @@ import React from 'react';
 import { AbsoluteFill } from 'remotion';
 import { COLORS, SCENES } from '../theme.js';
 import { headline, Icon, Line, LogoMark, SceneFade, useReveal } from '../components.jsx';
+import { COPY } from '../copy.js';
 
-const ROWS = [
-  { icon: 'browser', text: 'Todo pasa en tu navegador.' },
-  { icon: 'serverOff', text: 'Sin servidores.' },
-  { icon: 'shield', text: 'Sin permisos extra.' }
-];
+const ICONS = ['browser', 'serverOff', 'shield'];
 
 /** Scene 7: three trust statements on the beat. */
-export function Trust() {
+export function Trust({ lang = 'es' }) {
   return (
     <SceneFade duration={SCENES.trust.duration}>
       <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
         <div>
-          {ROWS.map((row, i) => (
-            <TrustRow key={row.text} {...row} delay={6 + i * 30} />
+          {COPY[lang].trust.map((text, i) => (
+            <TrustRow key={text} icon={ICONS[i]} text={text} delay={6 + i * 30} />
           ))}
         </div>
       </AbsoluteFill>
@@ -37,7 +34,7 @@ function TrustRow({ icon, text, delay }) {
 }
 
 /** Scene 8: end card. */
-export function EndCard() {
+export function EndCard({ lang = 'es' }) {
   const p = useReveal(4, 36);
   return (
     <SceneFade duration={SCENES.end.duration} fadeOut={20}>
@@ -45,7 +42,7 @@ export function EndCard() {
         <LogoMark size={120} progress={p} />
         <Line delay={14} style={{ ...headline, fontSize: 120, marginTop: 36 }}>CLC Agenda</Line>
         <Line delay={26} style={{ ...headline, fontSize: 40, fontWeight: 500, color: COLORS.muted, marginTop: 22, letterSpacing: '-0.015em' }}>
-          Para Chrome, Brave, Edge y Opera.
+          {COPY[lang].browsers}
         </Line>
       </AbsoluteFill>
     </SceneFade>

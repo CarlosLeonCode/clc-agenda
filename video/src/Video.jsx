@@ -14,12 +14,12 @@ const ORDER = [
   ['end', EndCard]
 ];
 
-export function Video() {
+export function Video({ lang = 'es' }) {
   return (
     <AbsoluteFill style={{ background: COLORS.canvas, fontFamily: FONT }}>
       {ORDER.map(([key, Scene]) => (
         <Sequence key={key} name={key} from={SCENES[key].from} durationInFrames={SCENES[key].duration}>
-          <Scene />
+          <Scene lang={lang} />
         </Sequence>
       ))}
     </AbsoluteFill>

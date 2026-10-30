@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "capture": "node capture.mjs",
+    "capture:en": "node capture.mjs en",
     "studio": "remotion studio src/index.jsx",
-    "render": "remotion render src/index.jsx ClcAgenda out/clc-agenda.mp4 --codec h264 --pixel-format yuv420p --muted"
+    "render": "remotion render src/index.jsx ClcAgenda out/clc-agenda.mp4 --codec h264 --pixel-format yuv420p --muted",
+    "render:en": "remotion render src/index.jsx ClcAgendaEn out/clc-agenda-en.mp4 --codec h264 --pixel-format yuv420p --muted"
   },
   "dependencies": {
     "@remotion/cli": "4.0.539",

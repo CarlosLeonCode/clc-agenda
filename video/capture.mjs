@@ -1,6 +1,8 @@
 /**
  * Captures the real CLC Agenda overlay (fake harness data only) as 2x PNGs
  * for the promo video, plus the click targets the animated cursor aims at.
+ * `node capture.mjs` captures the Spanish UI into public/ui; `node capture.mjs en`
+ * captures the English UI into public/ui/en. CAPTURE_OUT overrides the folder.
  */
 
 import http from 'node:http';
@@ -12,7 +14,13 @@ import puppeteer from 'puppeteer-core';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '..');
-const outDir = path.join(here, 'public', 'ui');
+const lang = process.argv[2] === 'en' ? 'en' : 'es';
+const outDir = process.env.CAPTURE_OUT || path.join(here, 'public', 'ui', lang === 'en' ? 'en' : '');
+const LOCALE = { es: 'es-419', en: 'en-US' }[lang];
+const TEXT = {
+  es: { group: 'Equipo Ventas LATAM', unsaved: 'sin guardar' },
+  en: { group: 'LATAM Sales Team', unsaved: 'unsaved' }
+}[lang];
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const HARNESS = '/video/harness.html';
 
@@ -39,9 +47,15 @@ async function main() {
 
   const server = await serve(repo);
   const { port } = server.address();
-  const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--hide-scrollbars'] });
+  const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--hide-scrollbars', `--lang=${LOCALE}`] });
   const page = await browser.newPage();
   await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 2 });
+
+  // The overlay picks its language from the browser: pin it, whatever the host locale is
+  await page.evaluateOnNewDocument((locale) => {
+    Object.defineProperty(navigator, 'language', { get: () => locale });
+    Object.defineProperty(navigator, 'languages', { get: () => [locale] });
+  }, LOCALE);
 
   // Hold engine responses until released, so the loading state can be captured
   await page.evaluateOnNewDocument(() => {
@@ -55,7 +69,7 @@ async function main() {
     window.__release = () => { window.__hold = false; window.__held.splice(0).forEach(([m, o]) => post(m, o)); };
   });
 
-  await page.goto(`http://127.0.0.1:${port}${HARNESS}`, { waitUntil: 'load' });
+  await page.goto(`http://127.0.0.1:${port}${HARNESS}?lang=${lang}`, { waitUntil: 'load' });
   await page.waitForFunction(() => window.WAExtractorUI && window.WAExtractorUI.open);
 
   // Transparent page: the PNG keeps only the window with its rounded corners
@@ -100,8 +114,8 @@ async function main() {
   const targets = { modal: { width: box.width, height: box.height } };
 
   // 1. Source view
-  const row = await (await root()).evaluateHandle(r => [...r.querySelectorAll('#wae-groups-container .wae-row')]
-    .find(b => b.textContent.includes('Equipo Ventas LATAM')));
+  const row = await (await root()).evaluateHandle((r, group) => [...r.querySelectorAll('#wae-groups-container .wae-row')]
+    .find(b => b.textContent.includes(group)), TEXT.group);
   targets.groupRow = await relative(row);
   await page.mouse.move(0, 0);
   await shot('source');
@@ -122,8 +136,8 @@ async function main() {
   await sleep(400);
   await shot('results');
 
-  const chip = await (await root()).evaluateHandle(r => [...r.querySelectorAll('.wae-summary-btn')]
-    .find(b => b.textContent.includes('sin guardar')));
+  const chip = await (await root()).evaluateHandle((r, unsaved) => [...r.querySelectorAll('.wae-summary-btn')]
+    .find(b => b.textContent.includes(unsaved)), TEXT.unsaved);
   targets.unsavedChip = await relative(chip);
   const google = await q('#wae-btn-export-google');
   targets.googleButton = await relative(google);
