@@ -54,6 +54,39 @@ ul, ol { padding: 0; list-style: none; }
 
 .wrap { width: 100%; max-width: 1240px; margin: 0 auto; padding-inline: 20px; }
 
+/* Seasonal ambience: body's paper propagates to the viewport, so z-index -1 sits above it and below all content */
+.ambience { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; }
+
+/* Seasonal nav ornament: overlays the nav row, so mounting it never shifts the layout or widens the home link.
+   Phones have ~16px between brand and buttons, so a compact scene perches above the end of the brand text */
+.season-ornament { position: absolute; right: -12px; bottom: calc(100% - 6px); width: 44px; height: 30px; pointer-events: none; animation: orn-in .6s ease-out both; }
+.season-ornament svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.orn-pumpkin, .orn-ghost, .orn-star, .orn-light, .orn-flake, .orn-heart, .orn-heartlet { transform-box: fill-box; transform-origin: center; }
+.orn-pumpkin { transform-origin: 50% 100%; animation: orn-wobble 5s ease-in-out infinite; }
+.orn-ghost { animation: orn-bob 3.2s ease-in-out infinite; }
+g:last-child > .orn-ghost { animation-duration: 2.6s; animation-delay: -1.2s; }
+.orn-star { animation: orn-twinkle 2.4s ease-in-out infinite; }
+.orn-light { animation: orn-blink 1.6s ease-in-out infinite; }
+.orn-light:nth-child(2n) { animation-delay: -.8s; }
+.orn-light:nth-child(3n) { animation-delay: -.4s; }
+.orn-flake { animation: orn-fall 4.2s linear infinite; }
+g:last-child > .orn-flake { animation-delay: -2.1s; }
+.orn-heart { animation: orn-beat 1.6s ease-in-out infinite; }
+.orn-heartlet { animation: orn-rise 3s ease-out infinite; }
+g:last-child > .orn-heartlet { animation-delay: -1.5s; }
+@keyframes orn-in { from { opacity: 0; transform: translateY(4px) scale(.9); } }
+@keyframes orn-wobble { 0%, 78%, 100% { transform: rotate(0); } 85% { transform: rotate(-5deg); } 92% { transform: rotate(4deg); } }
+@keyframes orn-bob { 50% { transform: translate(1.5px, -3px) rotate(-5deg); } }
+@keyframes orn-twinkle { 50% { transform: scale(1.22) rotate(18deg); } }
+@keyframes orn-blink { 50% { opacity: .2; } }
+@keyframes orn-fall { from { transform: translateY(-6px) rotate(0); opacity: 0; } 20%, 75% { opacity: 1; } to { transform: translateY(16px) rotate(120deg); opacity: 0; } }
+@keyframes orn-beat { 0%, 45%, 100% { transform: scale(1); } 12% { transform: scale(1.1); } 24% { transform: scale(1.03); } 34% { transform: scale(1.08); } }
+@keyframes orn-rise { from { transform: translateY(6px) scale(.6); opacity: 0; } 25% { opacity: 1; } to { transform: translateY(-14px) scale(1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .season-ornament,
+  .season-ornament * { animation: none; }
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;
@@ -77,7 +110,7 @@ ul, ol { padding: 0; list-style: none; }
 /* Header */
 .site-header { position: relative; z-index: 5; }
 .nav-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 18px; padding-bottom: 18px; }
-.brand { display: inline-flex; align-items: center; gap: 10px; font: 800 20px var(--display); text-decoration: none; white-space: nowrap; }
+.brand { position: relative; display: inline-flex; align-items: center; gap: 10px; font: 800 20px var(--display); text-decoration: none; white-space: nowrap; }
 .cta-long { display: none; }
 .nav-links { display: none; }
 .nav-links a { text-decoration: none; color: var(--muted); font-size: 15px; }
@@ -279,6 +312,7 @@ ul, ol { padding: 0; list-style: none; }
   .wrap { padding-inline: 32px; }
   .canvas { padding: 44px 32px 0; }
   .cta-long { display: inline; }
+  .season-ornament { right: auto; bottom: auto; left: calc(100% + 10px); top: 50%; width: 72px; height: 48px; margin-top: -26px; }
   .shape-green { display: block; }
   .panel { padding: 48px 40px; }
   .footer-row { flex-direction: row; justify-content: space-between; }
